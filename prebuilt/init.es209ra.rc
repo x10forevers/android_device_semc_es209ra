@@ -12,10 +12,11 @@ on fs
     mount yaffs2 mtd@cache /cache nosuid nodev
 
 on early-init
-    export EXTERNAL_STORAGE /mnt/sdcard
-    mkdir /mnt/sdcard 0000 system system
+    export EXTERNAL_STORAGE /storage/sdcard0
+    mkdir /storage/sdcard0 0000 system system
     # for backwards compatibility
-    symlink /mnt/sdcard /sdcard
+    symlink /storage/sdcard0 /mnt/sdcard 
+    symlink /storage/sdcard0 /sdcard
 
 on boot
     #rild
