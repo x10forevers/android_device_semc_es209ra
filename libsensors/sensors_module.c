@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "DASH - module"
+#define ALOG_TAG "DASH - module"
 
 #include <stdio.h>
 #include <cutils/log.h>

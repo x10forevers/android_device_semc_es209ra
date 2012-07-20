@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "DASH - ak897x"
+#define ALOG_TAG "DASH - ak897x"
 
 #include <stdlib.h>
 #include <string.h>

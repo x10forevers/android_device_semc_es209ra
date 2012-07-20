@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2012 Sony Ericsson Mobile Communications AB.
  *
@@ -13,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "DASH-bmp180_input"
+#define ALOG_TAG "DASH-bmp180_input"
 
 #include <string.h>
 #include <cutils/log.h>

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "DASH - config"
+#define ALOG_TAG "DASH - config"
 
 #include <stdio.h>
 #include <cutils/log.h>

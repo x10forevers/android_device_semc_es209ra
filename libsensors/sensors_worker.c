@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "DASH - worker"
+#define ALOG_TAG "DASH - worker"
 
 #include <cutils/log.h>
 #include <time.h>

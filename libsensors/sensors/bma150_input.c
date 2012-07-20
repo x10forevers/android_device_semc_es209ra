@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "DASH - bma150_input"
+#define ALOG_TAG "DASH - bma150_input"
 
 #include <stdlib.h>
 #include <string.h>

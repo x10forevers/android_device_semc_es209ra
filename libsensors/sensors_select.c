@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "DASH - select"
+#define ALOG_TAG "DASH - select"
 
 #include <unistd.h>
 #include <string.h>
