@@ -75,6 +75,7 @@ typedef  unsigned char      byte;        /* Unsigned 8  bit value type. */
 #define MDP_CSS_RGB2YUV 0
 #define MDP_CCS_YUV2RGB 1
 
+
 extern "C" {
 #include <fcntl.h>
 #include <time.h>
@@ -173,6 +174,7 @@ extern void (*mmcamera_jpegfragment_callback)(uint8_t *buff_ptr,
 extern void (*mmcamera_jpeg_callback)(jpeg_event_t status);
 extern void (*mmcamera_shutter_callback)(common_crop_t *crop);
 #endif
+
 
 
 /* #define CAMERA_FIRMWARE_UPDATE */
@@ -468,6 +470,7 @@ static String8 thumbnail_size_values;
 static String8 scene_mode_values;
 static Mutex g_RegisterBufRunningLock;
 
+
 //thumbnail sizes
 static const camera_size_type supportedThumbnailSizes[] = {
     { 160, 120 },
@@ -634,6 +637,8 @@ static void cam_frame_post_video (struct msm_frame *p)
 //-------------------------------------------------------------------------------------
 static Mutex singleton_lock;
 
+
+
 static void receive_camframe_callback(struct msm_frame *frame);
 static void receive_camframe_video_callback(struct msm_frame *frame); // 720p
 static void receive_jpeg_fragment_callback(uint8_t *buff_ptr, uint32_t buff_size);
@@ -643,6 +648,13 @@ static void receive_camframetimeout_callback(void);
 static int fb_fd = -1;
 static int32_t mMaxZoom = 0;
 static bool native_get_maxzoom(int camfd, void *pZm);
+
+//AutoFocus issues
+
+void (**LINK_camaf_callback)(struct msm_af_results_t * af_result);
+
+
+static void mm_camautofocus_callback(struct msm_af_results_t * af_result);
 
 static int dstOffset = 0;
 
@@ -1089,11 +1101,11 @@ bool SemcCameraHardware::startCamera()
     *(void **)&LINK_zoom_crop_upscale =
         ::dlsym(libmmcamera, "zoom_crop_upscale");
 */
-#if SCRITCH_OFF
     *(void **)&LINK_camaf_callback =
         ::dlsym(libmmcamera, "camaf_callback");
 
     *LINK_camaf_callback = mm_camautofocus_callback;
+#if SCRITCH_OFF
 
     *(void **)&LINK_camzoom_callback =
         ::dlsym(libmmcamera, "camzoom_callback");
@@ -1745,6 +1757,7 @@ static bool native_start_autofocus (int camfd, bool ae_lock, bool awb_lock, bool
     LOGD("END native_start_autofocus");
     return true;
 }
+#endif//SCRITCH_OFF
 /**
  * @brief native_stop_autofocus
  * @param camfd [IN] Open Information
@@ -1773,7 +1786,6 @@ static bool native_stop_autofocus (int camfd)
     LOGD("END native_stop_autofocus");
     return true;
 }
-#endif
 /**
  * @brief native_start_autozoom
  * @param camfd [IN]  Camera open information
@@ -3506,7 +3518,7 @@ status_t SemcCameraHardware::cancelAutoFocusInternal()
 
     {
         Mutex::Autolock cbLock(&mCallbackLock);
-#if SCRITCH_OFF
+#if 1//SCRITCH_OFF
         if (native_stop_autofocus(mCameraControlFd) == false) {
 #else
         if (native_cancel_afmode(mCameraControlFd) == false) {
@@ -8688,19 +8700,6 @@ bool SemcCameraHardware::native_set_parm(cam_ctrl_type type, uint16_t length, vo
     return true;
 }
 
-/* @brief mm_camautofocus_callback
- * @param af_state [IN] Processing result
- * @return void
- *
- * @brief The function that an auto-focus answer from the device driver is taken
- */
-static void mm_camautofocus_callback(struct msm_af_results_t * af_result)
-{
-    sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
-    if (obj != 0) {
-        obj->receiveAutoFocus(af_result);
-    }
-}
 
 /**
  * @brief mm_camzoom_callback
@@ -8731,6 +8730,58 @@ static void mm_camanalysis_callback(struct msm_analysis_data_t* analysis_data)
     if (obj != 0)
     {
         obj->receiveFrameAnalysis(analysis_data);
+    }
+}
+
+/**
+ * @brief SemcCameraHardware::receiveAutoFocus
+ * @param af_state [IN] Processing result
+ * @return void
+ *
+ * @brief The function to inform a camera service of the auto-focus Processing completion
+ */
+void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
+{
+    LOGD("START receiveAutoFocus : mStateCameraHal = [%d]",mStateCameraHal);
+
+    if((CAMERAHAL_STATE_AFSTART != mStateCameraHal) &&
+       (CAMERAHAL_STATE_AFLOCK != mStateCameraHal) &&
+       (CAMERAHAL_STATE_AFCANCEL != mStateCameraHal)){
+        LOGW("END receiveAutoFocus : mStateCameraHal Status Error");
+        return;
+    }
+    mCallbackLock.lock();
+    notify_callback autoFocuscb = mNotifyCallback;
+    void *data = mCallbackCookie;
+    mCallbackLock.unlock();
+
+    if(true == mFocusLockValue) {
+        usleep(200*1000);
+        mFocusLockValue = false;
+    }
+
+    LOGV("receiveAutoFocus : 3rdparty : AF SUCCESS");
+    //autoFocuscb(CAMERA_MSG_FOCUS, true, 0, data);
+    mCancelAutoFocusFlg = false;
+    mAutoFocusThreadRunning = false;
+    mCancelAutoFocusWait.signal();
+
+
+    LOGD("END receiveAutoFocus");
+}
+
+
+/* @brief mm_camautofocus_callback
+ * @param af_state [IN] Processing result
+ * @return void
+ *
+ * @brief The function that an auto-focus answer from the device driver is taken
+ */
+static void mm_camautofocus_callback(struct msm_af_results_t * af_result)
+{
+    sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
+    if (obj != 0) {
+        obj->receiveAutoFocus(af_result);
     }
 }
 

@@ -56,6 +56,9 @@
 #define CAMERA_8MSIZE_WIDTH                   3264
 #define CAMERA_8MSIZE_HEIGHT                  2448
 
+
+//Create some fake defines to please the compiler but never use since we are using an external APP and not Sony one
+
 typedef enum {
     CAMERA_ANTIBANDING_OFF,
     CAMERA_ANTIBANDING_60HZ,
@@ -410,6 +413,10 @@ static jpeg_quality_t jpeg_quality_sizes_fine[] = {
 
 };
 
+struct msm_af_result_t{
+    int msm_afstate_result;
+    int msm_af_failurestate_info;
+} msm_af_result_t;
 
 //Autofocus result structure
 struct af_result_t{
@@ -448,6 +455,7 @@ typedef enum{
 //    unsigned int    flash;
 //    unsigned int    distance_range;
 //};
+
 
 class SemcCameraHardware : public CameraHardwareInterface {
     
