@@ -339,6 +339,14 @@ static const str_map focus_modes[] = {
     { CameraParameters::FOCUS_MODE_MACRO,    AF_MODE_MACRO }
 };
 
+static const str_map flash[] = {
+    { CameraParameters::FLASH_MODE_OFF,  LED_MODE_OFF },
+    //Remove Auto not working
+    //{ CameraParameters::FLASH_MODE_AUTO, LED_MODE_AUTO },
+    { CameraParameters::FLASH_MODE_ON,   LED_MODE_ON },
+    { "torch", LED_MODE_ON }
+};
+
 
 #if SCRITCH_OFF
 static const str_map af_mode[] = {
@@ -462,6 +470,7 @@ static String8 antibanding_values;
 static String8 effect_values;
 static String8 autoexposure_values;
 static String8 whitebalance_values;
+static String8 flash_values;
 static String8 focus_mode_values;
 static String8 picture_format_values;
 static String8 framerate_values;
@@ -856,6 +865,9 @@ void SemcCameraHardware::initDefaultParameters()
             autoexposure, sizeof(autoexposure) / sizeof(str_map));
         whitebalance_values = create_values_str(
             whitebalance, sizeof(whitebalance) / sizeof(str_map));
+        flash_values = create_values_str(
+            flash, sizeof(flash) / sizeof(str_map));
+
 
         //filter preview sizes
         filterPreviewSizes();
@@ -873,6 +885,10 @@ void SemcCameraHardware::initDefaultParameters()
             framerate, sizeof(framerate) / sizeof(camera_int_map_type));
         thumbnail_size_values = create_sizes_str(
             supportedThumbnailSizes, sizeof(supportedThumbnailSizes) / sizeof(camera_size_type));
+
+
+        //Set Focus Mode
+        setInitialValue();
         parameter_string_initialized = true;
     }
 
@@ -950,7 +966,8 @@ void SemcCameraHardware::initDefaultParameters()
 
 #endif//SCRITCH_OFF
     mParameters.set(CameraParameters::KEY_FLASH_MODE, CameraParameters::FLASH_MODE_OFF);
-    mParameters.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES, "off,torch");
+    mParameters.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES, flash_values);
+
     mParameters.set(CameraParameters::KEY_FOCAL_LENGTH,CAMERA_FOCAL_LENGTH_DEFAULT);
     mParameters.set(CameraParameters::KEY_FOCUS_DISTANCES, "10,1000,Infinity");
     mParameters.set(CameraParameters::KEY_SUPPORTED_JPEG_THUMBNAIL_SIZES,
@@ -1452,8 +1469,44 @@ static bool native_stop_preview(int camfd)
 
     return true;
 }
+static int
+write_int(char const* path, int value)
+{
+    int fd;
+    static int already_warned = 0;
 
-static bool native_prepare_snapshot(int camfd)
+    fd = open(path, O_RDWR);
+    if (fd >= 0) {
+        char buffer[20];
+        int bytes = sprintf(buffer, "%d\n", value);
+        int amt = write(fd, buffer, bytes);
+        close(fd);
+        return amt == -1 ? -errno : 0;
+    } else {
+        if (already_warned == 0) {
+            LOGE("write_int failed to open %s\n", path);
+            already_warned = 1;
+        }
+        return -errno;
+    }
+}
+
+
+static void
+setSocTorchMode(bool enable)
+{
+    char const*const FLASH = FLASHLIGHT; 
+    if (enable){
+            int value = 255;
+            write_int(FLASH, value);
+    } else {
+            int value = 0;
+            write_int(FLASH, value);
+   }
+}
+
+
+static bool native_prepare_snapshot(int camfd, const CameraParameters& params)
 {
     LOGD("START native_prepare_snapshot");
 
@@ -1465,6 +1518,21 @@ static bool native_prepare_snapshot(int camfd)
     ctrlCmd.length     = 0;
     ctrlCmd.value      = NULL;
     ctrlCmd.resp_fd = camfd;
+
+    const char *str = params.get(CameraParameters::KEY_FLASH_MODE);
+
+
+    LOGD("%s, Flash Value %s", __FUNCTION__, str);
+
+    if (str != NULL) {
+       int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
+       if (value != NOT_FOUND) {
+            bool shouldBeOn = strcmp(str, "on") == 0;
+            setSocTorchMode(shouldBeOn);
+       }
+    }
+
+
 
     if (ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
         LOGD("native_prepare_snapshot: ioctl fd %d error %s",
@@ -1478,6 +1546,7 @@ static bool native_prepare_snapshot(int camfd)
     return true;
 }
 
+
 static bool native_start_snapshot(int camfd)
 {
     LOGD("START native_start_snapshot");
@@ -1488,6 +1557,7 @@ static bool native_start_snapshot(int camfd)
     ctrlCmd.type       = CAMERA_START_SNAPSHOT;
     ctrlCmd.length     = 0;
     ctrlCmd.resp_fd    = camfd; // FIXME: this will be put in by the kernel
+
 
     if(ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
         LOGD("native_start_snapshot: ioctl fd %d error %s",
@@ -1536,6 +1606,9 @@ static bool native_stop_snapshot (int camfd)
     ctrlCmd.type       = CAMERA_STOP_SNAPSHOT;
     ctrlCmd.length     = 0;
     ctrlCmd.resp_fd    = -1;
+
+
+    setSocTorchMode(0);
 
     if (ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND_2, &ctrlCmd) < 0) {
         LOGD("native_stop_snapshot: ioctl fd %d error %s",
@@ -3567,8 +3640,9 @@ status_t SemcCameraHardware::autoFocus()
     {
         mAutoFocusThreadLock.lock();
         if (!mAutoFocusThreadRunning) {
-            if (native_prepare_snapshot(mCameraControlFd) == false) {
+            if (native_prepare_snapshot(mCameraControlFd, mParameters) == false) {
                LOGD("native_prepare_snapshot failed!\n");
+               setSocTorchMode(0);
                mAutoFocusThreadLock.unlock();
                return UNKNOWN_ERROR;
             }
@@ -3899,7 +3973,8 @@ status_t SemcCameraHardware::takePicture()
         return UNKNOWN_ERROR;
     }
 
-    if (!native_prepare_snapshot(mCameraControlFd)) {
+    if (!native_prepare_snapshot(mCameraControlFd, mParameters)) {
+        setSocTorchMode(0);
         mSnapshotThreadWaitLock.unlock();
         return UNKNOWN_ERROR;
     }
@@ -4045,6 +4120,8 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
     if ((rc = setFocusMode(params)))    final_rc = rc;
     if ((rc = setBrightness(params)))   final_rc = rc;
     if ((rc = setPictureFormat(params))) final_rc = rc;
+//Use J setFlash Function
+    if ((rc = setFlash(params)))        final_rc = rc;
 #if SCRITCH_OFF
     if ((rc = setExposureCompensation(params))) final_rc = rc;
     if ((rc = setFlashlightBrightness(params))) final_rc = rc;
@@ -5105,14 +5182,25 @@ status_t SemcCameraHardware::setWhiteBalance(const CameraParameters& params,
     return BAD_VALUE;
 }
 
+
+
 status_t SemcCameraHardware::setFlash(const CameraParameters& params)
 {
-    //if we are support torch mode.
-    LOGD("START setFlash");
     const char *str = params.get(CameraParameters::KEY_FLASH_MODE);
     mParameters.set(CameraParameters::KEY_FLASH_MODE, str);
-    LOGD("END setFlash : NOERROR");
-    return NO_ERROR;
+
+    LOGD("flash mode value: %s", (str == NULL) ? "NULL" : str);
+
+    if (str != NULL) {
+       int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
+       if (value != NOT_FOUND) {
+            bool shouldBeOn = strcmp(str, "torch") == 0;
+            setSocTorchMode(shouldBeOn);
+       }
+       return NO_ERROR;
+    }
+    LOGD("Invalid flash mode value: %s", (str == NULL) ? "NULL" : str);
+    return BAD_VALUE;
 
 }
 

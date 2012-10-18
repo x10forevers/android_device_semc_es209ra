@@ -43,6 +43,12 @@ typedef enum {
 #define EXIFTAGID_EXIF_DATE_TIME_ORIGINAL 0x3A9003
 #define EXIFTAGID_EXIF_DATE_TIME 0x3B9004
 
+enum {
+    LED_MODE_OFF,
+    LED_MODE_AUTO,
+    LED_MODE_ON,
+};
+
 typedef enum {
     CAMERA_RSP_CB_SUCCESS,
     CAMERA_EXIT_CB_DONE,
