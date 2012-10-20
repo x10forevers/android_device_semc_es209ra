@@ -965,7 +965,7 @@ void SemcCameraHardware::initDefaultParameters()
     mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, CameraParameters::ZERO);
 
 #endif//SCRITCH_OFF
-    mParameters.set(CameraParameters::KEY_FLASH_MODE, CameraParameters::FLASH_MODE_OFF);
+    mParameters.set(CameraParameters::KEY_FLASH_MODE, CameraParameters::FLASH_MODE_ON);
     mParameters.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES, flash_values);
 
     mParameters.set(CameraParameters::KEY_FOCAL_LENGTH,CAMERA_FOCAL_LENGTH_DEFAULT);
@@ -1782,7 +1782,6 @@ static bool native_sync_raw_snapshot_interval (int camfd)
     return true;
 }
 
-#if SCRITCH_OFF
 /**
  * @brief native_start_autofocus
  * @param camfd [IN] Open Information
@@ -1830,7 +1829,6 @@ static bool native_start_autofocus (int camfd, bool ae_lock, bool awb_lock, bool
     LOGD("END native_start_autofocus");
     return true;
 }
-#endif//SCRITCH_OFF
 /**
  * @brief native_stop_autofocus
  * @param camfd [IN] Open Information
@@ -3504,7 +3502,8 @@ void SemcCameraHardware::runAutoFocus()
 
     mAutoFocusFd = open(MSM_CAMERA_CONTROL, O_RDWR);
     if (mAutoFocusFd < 0) {
-        LOGD("autofocus: cannot open %s: %s",
+        LOGD("%s autofocus: cannot open %s: %s",
+            __FUNCTION__,
              MSM_CAMERA_CONTROL,
              strerror(errno));
         mAutoFocusThreadRunning = false;
@@ -3534,17 +3533,17 @@ void SemcCameraHardware::runAutoFocus()
                                 mParameters.get(CameraParameters::KEY_FOCUS_MODE));
 
     /* This will block until either AF completes or is cancelled. */
-    LOGD("af start (fd %d mode %d)", mAutoFocusFd, afMode);
+    LOGD("%s af start (fd %d mode %d)", __FUNCTION__, mAutoFocusFd, afMode);
     status_t err;
     err = mAfLock.tryLock();
     if(err == NO_ERROR) {
         {
             Mutex::Autolock cameraRunningLock(&mCameraRunningLock);
             if(mCameraRunning){
-                LOGD("Start AF");
+                LOGD("%s Start AF", __FUNCTION__);
                 status = native_set_afmode(mAutoFocusFd, afMode);
             }else{
-                LOGD("As Camera preview is not running, AF not issued");
+                LOGD("%s As Camera preview is not running, AF not issued", __FUNCTION__);
                 status = false;
             }
         }
@@ -3553,8 +3552,8 @@ void SemcCameraHardware::runAutoFocus()
     else{
         //AF Cancel would have acquired the lock,
         //so, no need to perform any AF
-        LOGD("As Cancel auto focus is in progress, auto focus request "
-                "is ignored");
+        LOGD("%s As Cancel auto focus is in progress, auto focus request "
+                "is ignored", __FUNCTION__);
         status = false;
     }
 
@@ -3626,7 +3625,7 @@ void *auto_focus_thread(void *user)
     LOGD("auto_focus_thread X");
     return NULL;
 }
-
+#if 0
 status_t SemcCameraHardware::autoFocus()
 {
     LOGD("autoFocus E");
@@ -3668,7 +3667,7 @@ status_t SemcCameraHardware::autoFocus()
     LOGD("autoFocus X");
     return NO_ERROR;
 }
-#if  SCRITCH_OFF
+#else
 status_t SemcCameraHardware::autoFocus()
 {
     LOGD("START autoFocus : mStateCameraHal[%d]",mStateCameraHal);
@@ -3701,6 +3700,7 @@ status_t SemcCameraHardware::autoFocus()
     if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),
                CameraParameters::FOCUS_MODE_INFINITY) == 0) {
         if (autoFocusEnabled) {
+            LOGD("%s Calling CB 1", __FUNCTION__);
             cb(CAMERA_MSG_FOCUS, true, 0, data);
         }
         LOGD("END autoFocus : KEY_FOCUS_MODE is FOCUS_MODE_INFINITY");
@@ -3723,6 +3723,7 @@ status_t SemcCameraHardware::autoFocus()
 
     if(native_start_autofocus(mCameraControlFd, false, false, mFocusLockValue) == false){
         if (autoFocusEnabled) {
+            LOGD("%s Calling CB 2", __FUNCTION__);
             cb(CAMERA_MSG_FOCUS, false, 0, data);
         }
         LOGD("END autoFocus :native_start_autofocus is error.");
@@ -8838,10 +8839,30 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
         LOGW("END receiveAutoFocus : mStateCameraHal Status Error");
         return;
     }
+    LOGD("%s AF_RESULT %d", __FUNCTION__, af_result->msm_af_result);
     mCallbackLock.lock();
     notify_callback autoFocuscb = mNotifyCallback;
+    bool autoFocusEnabled = mNotifyCallback && (mMsgEnabled & CAMERA_MSG_FOCUS);
+
     void *data = mCallbackCookie;
     mCallbackLock.unlock();
+
+    if (mCancelAutoFocusFlg && (af_result->msm_af_result >= MSM_AF_FORCE_STOP ))
+    {
+        Mutex::Autolock lock(&mCancelAutoFocus);
+        LOGV("receiveAutoFocus : LOCK ACQUIRED ");
+        mCancelAutoFocusFlg = false;
+        mAutoFocusThreadRunning = false;
+        mCancelAutoFocusWait.signal();
+        LOGV("receiveAutoFocus: SIGNALLED ");
+        return;
+
+    }
+
+    if (!autoFocusEnabled)
+    {
+        LOGW("%s Autofocus callback is NULL", __FUNCTION__);
+    }
 
     if(true == mFocusLockValue) {
         usleep(200*1000);
@@ -8849,11 +8870,9 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
     }
 
     LOGV("receiveAutoFocus : 3rdparty : AF SUCCESS");
-    //autoFocuscb(CAMERA_MSG_FOCUS, true, 0, data);
-    mCancelAutoFocusFlg = false;
+    autoFocuscb(CAMERA_MSG_FOCUS, true, 0, data);
     mAutoFocusThreadRunning = false;
-    mCancelAutoFocusWait.signal();
-
+    mStateCameraHal = CAMERAHAL_STATE_PREVIEWSTART;
 
     LOGD("END receiveAutoFocus");
 }

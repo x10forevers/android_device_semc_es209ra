@@ -59,6 +59,20 @@
 
 //Create some fake defines to please the compiler but never use since we are using an external APP and not Sony one
 
+typedef struct camera_start_auto_focus_t{
+    int camera_ae_lock;
+    int camera_awb_lock;
+    int camera_focus_lock;
+} camera_start_auto_focus_t;
+
+#define CAMERA_AE_LOCK 1
+#define CAMERA_AE_UNLOCK 0
+#define CAMERA_AWB_LOCK 1
+#define CAMERA_AWB_UNLOCK 0
+#define CAMERA_FOCUS_LOCK 1
+#define CAMERA_FOCUS_UNLOCK 0
+
+
 typedef enum {
     CAMERA_ANTIBANDING_OFF,
     CAMERA_ANTIBANDING_60HZ,
@@ -413,10 +427,19 @@ static jpeg_quality_t jpeg_quality_sizes_fine[] = {
 
 };
 
-struct msm_af_result_t{
-    int msm_afstate_result;
+
+enum{
+    //SUCCESS 0 or 1
+    MSM_AF_SUCCESS=0,
+    MSG_AF_FAILED=1,
+    MSM_AF_FORCE_STOP=2,
+    MSM_AF_ERROR
+};
+
+struct msm_af_results_t{
+    int msm_af_result;
     int msm_af_failurestate_info;
-} msm_af_result_t;
+} msm_af_results_t;
 
 //Autofocus result structure
 struct af_result_t{

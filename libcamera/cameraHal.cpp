@@ -215,7 +215,6 @@ CameraHAL_CopyBuffers_Sw(char *dest, char *src, int size)
 
 void
 CameraHAL_HandlePreviewData(const android::sp<android::IMemory>& dataPtr,
-                            preview_stream_ops_t *mWindow,
                             camera_request_memory getMemory,
                             int32_t previewWidth, int32_t previewHeight)
 {
@@ -266,8 +265,8 @@ CameraHAL_HandlePreviewData(const android::sp<android::IMemory>& dataPtr,
                                              offset, privHandle->offset,
                                              previewFormat, destFormat,
                                              0, 0, previewWidth,
-                                             previewHeight)) {
-	       	//	if (true){
+                                             previewHeight) && (NULL != mWindow)) {
+                 //Multithreading and race condition...
                   void *bits;
                   android::Rect bounds;
                   android::GraphicBufferMapper &mapper =
@@ -288,8 +287,13 @@ CameraHAL_HandlePreviewData(const android::sp<android::IMemory>& dataPtr,
                   // unlock buffer before sending to display
                   mapper.unlock(*bufHandle);
                }
-
-               mWindow->enqueue_buffer(mWindow, bufHandle);
+               // Race condition AGAIN ....
+               LOGD("%s Copy successful", __FUNCTION__ );
+               if (NULL != mWindow)
+                {
+                    LOGD("%s putting buffer in queue", __FUNCTION__);
+                    mWindow->enqueue_buffer(mWindow, bufHandle);
+                }
                LOGD("CameraHAL_HandlePreviewData: enqueued buffer\n");
             } else {
                LOGD("CameraHAL_HandlePreviewData: ERROR locking the buffer\n");
@@ -298,7 +302,11 @@ CameraHAL_HandlePreviewData(const android::sp<android::IMemory>& dataPtr,
          } else {
             LOGD("CameraHAL_HandlePreviewData: ERROR dequeueing the buffer\n");
          }
-      }
+      }else{
+         LOGD("%s SET BUFFER FAILED", __FUNCTION__);
+        }
+   }else{
+       LOGD("%s NO WINDOW or memory %p, %p", __FUNCTION__, mWindow, getMemory);
    }
 }
 
@@ -336,7 +344,7 @@ CameraHAL_DataCb(int32_t msg_type, const android::sp<android::IMemory>& dataPtr,
       int32_t previewWidth, previewHeight;
       android::CameraParameters hwParameters = qCamera->getParameters();
       hwParameters.getPreviewSize(&previewWidth, &previewHeight);
-      CameraHAL_HandlePreviewData(dataPtr, mWindow, origCamReqMemory,
+      CameraHAL_HandlePreviewData(dataPtr, origCamReqMemory,
                                   previewWidth, previewHeight);
    //}
    //LOGD("CameraHAL_DataCb: msg_type:%d user:%p\n", msg_type, user);
