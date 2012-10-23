@@ -431,7 +431,7 @@ static jpeg_quality_t jpeg_quality_sizes_fine[] = {
 enum{
     //SUCCESS 0 or 1
     MSM_AF_SUCCESS=0,
-    MSG_AF_FAILED=1,
+    MSM_AF_FAILED=1,
     MSM_AF_FORCE_STOP=2,
     MSM_AF_ERROR
 };

@@ -880,7 +880,6 @@ void SemcCameraHardware::initDefaultParameters()
         picture_format_values = create_values_str(
             picture_formats, sizeof(picture_formats)/sizeof(str_map));
 
-
         framerate_values = create_values_int(
             framerate, sizeof(framerate) / sizeof(camera_int_map_type));
         thumbnail_size_values = create_sizes_str(
@@ -893,6 +892,7 @@ void SemcCameraHardware::initDefaultParameters()
     }
 
     mParameters.setPreviewSize(DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT);
+    mParameters.setVideoSize(DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT);
     mDimension.display_width = DEFAULT_PREVIEW_WIDTH;
     mDimension.display_height = DEFAULT_PREVIEW_HEIGHT;
     mDimension.postview_width = DEFAULT_PREVIEW_WIDTH;
@@ -935,6 +935,10 @@ void SemcCameraHardware::initDefaultParameters()
 
     mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES,
                     preview_size_values.string());
+    //Set Video Keys
+    mParameters.set(CameraParameters::KEY_SUPPORTED_VIDEO_SIZES,
+                    preview_size_values.string());
+
     mParameters.set(CameraParameters::KEY_SUPPORTED_PICTURE_SIZES,
                     picture_size_values.string());
 
@@ -2146,9 +2150,9 @@ typedef struct camera_capture_settings_t{
 } camera_capture_settings_t;
 
 typedef struct camera_jpeg_quality_t{
+   uint32_t camera_jpeg_quality_min; 
    uint32_t camera_jpeg_quality_ave;
    uint32_t camera_jpeg_quality_max;
-   uint32_t camera_jpeg_quality_min; 
 }camera_jpeg_quality_t;
 /**
 * @brief native_set_jpegquality
@@ -2819,8 +2823,10 @@ bool SemcCameraHardware::initPreview()
         previewWidth = CAMERA_FWVGASIZE_DRV_WIDTH;
     }
 
+    
     videoWidth = previewWidth;  // temporary , should be configurable later
     videoHeight = previewHeight;
+    //mParameters.getVideoSize(&videoWidth, &videoHeight);
     LOGD("initPreview E: preview size=%dx%d videosize = %d x %d", previewWidth, previewHeight, videoWidth, videoHeight );
 
     if( ( mCurrentTarget == TARGET_MSM7630 ) || (mCurrentTarget == TARGET_QSD8250)) {
@@ -3707,6 +3713,19 @@ status_t SemcCameraHardware::autoFocus()
         return NO_ERROR;
     }
 
+
+    //TODO test setting afmode in here.
+    isp3a_af_mode_t afMode;
+
+    afMode = (isp3a_af_mode_t)attr_lookup(focus_modes,
+                                sizeof(focus_modes) / sizeof(str_map),
+                                mParameters.get(CameraParameters::KEY_FOCUS_MODE));
+    //if(native_set_parm(CAMERA_SET_PARM_AF_FRAME, sizeof(afMode), (void *)&afMode, DRV_TIMEOUT_10K))
+    //{
+    //    LOGD("%s AFmode set to %s", __FUNCTION__, mParameters.get(CameraParameters::KEY_FOCUS_MODE));
+    //}else{
+    //    LOGD("%s AFmode not set correctly", __FUNCTION__);
+    //}
 #if SCRITCH_OFF
     if(setAfMode(mParameters, CameraParameters::AF_MODE, CameraParameters::SINGLE) != NO_ERROR) {
         if (autoFocusEnabled) {
@@ -3720,6 +3739,19 @@ status_t SemcCameraHardware::autoFocus()
     CameraHalState oldState = mStateCameraHal;
     mStateCameraHal = CAMERAHAL_STATE_AFSTART;
     mFocusLockValue = true;
+
+    const char *str = mParameters.get(CameraParameters::KEY_FLASH_MODE);
+
+
+    LOGD("%s, Flash Value %s", __FUNCTION__, str);
+
+    if (str != NULL) {
+       int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
+       if (value != NOT_FOUND) {
+            bool shouldBeOn = strcmp(str, "on") == 0;
+            setSocTorchMode(shouldBeOn);
+       }
+    }
 
     if(native_start_autofocus(mCameraControlFd, false, false, mFocusLockValue) == false){
         if (autoFocusEnabled) {
@@ -3749,6 +3781,7 @@ status_t SemcCameraHardware::cancelAutoFocus()
         rc = cancelAutoFocusInternal();
     }
 
+    setSocTorchMode(0); 
     LOGD("END cancelAutoFocus : return[%d]",rc);
     return rc;
 }
@@ -4111,6 +4144,13 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
     }
 #endif//SCRITCH_OFF
 
+    //Save the Video Size here
+    {
+        int width, height;
+        params.getVideoSize(&width,&height);
+        mParameters.setVideoSize(width, height);
+    }
+
     if ((rc = setPreviewSize(params)))  final_rc = rc;
     if ((rc = setPictureSize(params)))  final_rc = rc;
     if ((rc = setJpegQuality(params)))  final_rc = rc;
@@ -4458,7 +4498,8 @@ void SemcCameraHardware::receivePreviewFrame(struct msm_frame *frame)
             startRecording();
         }
     }
-
+    //We are in preview.
+    mPreviewFlag = true;
     // If output  is NOT enabled (targets otherthan 7x30 currently..)
     if( (mCurrentTarget != TARGET_MSM7630 ) &&  (mCurrentTarget != TARGET_QSD8250)) {
         if(rcb != NULL && (msgEnabled & CAMERA_MSG_VIDEO_FRAME)) {
@@ -4870,6 +4911,8 @@ void SemcCameraHardware::receiveJpegPicture(void)
         mReleaseWaitLock.unlock();
     }
     mReceiveExifDataFlag = false;
+    //Turn OFF the flash
+    setSocTorchMode(0);
     LOGD("END receiveJpegPicture");
 
 }
@@ -4974,6 +5017,7 @@ status_t SemcCameraHardware::setJpegQuality(const CameraParameters& params,
                                                 int int_value /* = -1 */,
                                                 bool collective /* = false */)
 {
+    LOGD("%s E", __FUNCTION__);
 
     status_t rc = NO_ERROR;
     int quality = params.getInt(CameraParameters::KEY_JPEG_QUALITY);
@@ -4996,7 +5040,7 @@ status_t SemcCameraHardware::setJpegQuality(const CameraParameters& params,
         LOGD("Invalid jpeg thumbnail quality=%d", quality);
         rc = BAD_VALUE;
     }
-
+    LOGD("%s X", __FUNCTION__);
     return rc;
 }
 
@@ -5156,6 +5200,7 @@ status_t SemcCameraHardware::setWhiteBalance(const CameraParameters& params,
     }
     int32_t value = attr_lookup(whitebalance, sizeof(whitebalance) / sizeof(str_map), str, int_value);
     if(value != NOT_FOUND) {
+        LOGD("%s preview flag %s", __FUNCTION__, mPreviewFlag?"TRUE":"FALSE");
         if(true == mPreviewFlag){
             if((strcmp(mWhitebalance, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_WB, sizeof(value), (void *)&value)) {
@@ -5405,7 +5450,7 @@ status_t SemcCameraHardware::setFocusMode(const CameraParameters& params,
     value = attr_lookup(focus_modes, sizeof(focus_modes) / sizeof(str_map), str, int_value);
     if(value != NOT_FOUND) {
         if(true == mPreviewFlag){
-            if((strcmp(mFocusMode, str) != 0) || (true == collective)) {
+            if((strcmp(mFocusMode, str) != 0) /*|| (true == collective)*/) {
                 if(true != native_set_parm(CAMERA_SET_PARM_AF_RANGE, sizeof(value), (void *)&value, DRV_TIMEOUT_10K)) {
                     LOGD("END setFocusMode : native_set_parm(CAMERA_SET_PARM_AF_RANGE) : ERROR");
                     return UNKNOWN_ERROR;
@@ -8843,7 +8888,7 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
     mCallbackLock.lock();
     notify_callback autoFocuscb = mNotifyCallback;
     bool autoFocusEnabled = mNotifyCallback && (mMsgEnabled & CAMERA_MSG_FOCUS);
-
+    bool status=false;
     void *data = mCallbackCookie;
     mCallbackLock.unlock();
 
@@ -8870,7 +8915,14 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
     }
 
     LOGV("receiveAutoFocus : 3rdparty : AF SUCCESS");
-    autoFocuscb(CAMERA_MSG_FOCUS, true, 0, data);
+    
+    if(af_result->msm_af_result<=MSM_AF_FAILED)
+    {
+        //MSM_AF_FAILED or MSM_AF_SUCCESS same status
+        status=true;
+    }
+    
+    autoFocuscb(CAMERA_MSG_FOCUS, status, 0, data);
     mAutoFocusThreadRunning = false;
     mStateCameraHal = CAMERAHAL_STATE_PREVIEWSTART;
 
