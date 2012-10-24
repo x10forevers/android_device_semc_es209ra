@@ -65,6 +65,7 @@ typedef struct camera_start_auto_focus_t{
     int camera_focus_lock;
 } camera_start_auto_focus_t;
 
+
 #define CAMERA_AE_LOCK 1
 #define CAMERA_AE_UNLOCK 0
 #define CAMERA_AWB_LOCK 1
@@ -310,6 +311,9 @@ namespace android {
 #define CAMERAHAL_JPEGQUALITY_FINE_MIN        67
 #define CAMERAHAL_JPEGQUALITY_FINE_MAX        100
 #define CAMERAHAL_THUMBNAILQUALITY_FINE_MAX   100
+#define CAMERAHAL_ORIENTATION_PORTRAIT        "portrait"
+#define CAMERAHAL_ORIENTATION_LANDSCAPE       "landscape"
+#define ORIENTATION                           "orientation"
 
 #define SOI_MARKER_LEN                        2
 #define APP1_MARKER_LEN                       2
@@ -470,14 +474,36 @@ typedef enum{
   CAMERAHAL_STATE_AFLOCK 
 } CameraHalState;
 
-//struct exifinfo_t{
-//    rational_t      exposure_time;
-//    srational_t     shutter_speed;
-//    srational_t     exposure_value;
-//    unsigned int    iso_speed;
-//    unsigned int    flash;
-//    unsigned int    distance_range;
-//};
+
+typedef struct rational_t{
+    short numerator;
+    short denominator;
+}rational_t; 
+
+
+typedef struct srational_t{
+    short numerator;
+    short denominator;
+}srational_t; 
+
+
+typedef struct camera_exif_t{
+    rational_t exposure_time;
+    srational_t shutter_speed_value;
+    srational_t exposure_bias_value;
+    unsigned int iso_speed_ratings;
+    unsigned int flash;
+    unsigned int subject_distance_range;
+}camera_exif_t;
+
+typedef struct exifinfo_t{
+    rational_t      exposure_time;
+    srational_t     shutter_speed;
+    srational_t     exposure_value;
+    unsigned int    iso_speed;
+    unsigned int    flash;
+    unsigned int    distance_range;
+}exifinfo_t;
 
 
 class SemcCameraHardware : public CameraHardwareInterface {
@@ -872,7 +898,7 @@ private:
     char                                mAntibanding[CAMERA_STRING_VALUE_MAXLEN];
     char                                mEffect[CAMERA_STRING_VALUE_MAXLEN];
     int                                 mZoom;
-    //exifinfo_t                          mExifInfo;
+    exifinfo_t                          mExifInfo;
     char                                mKeyScene[SET_PARAM_KEY_SCENE_LENGTH];
     void                                *mASSBuffer;
     int                                 mASSBufferSize;

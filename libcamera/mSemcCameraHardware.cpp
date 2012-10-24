@@ -333,9 +333,8 @@ static const str_map picture_formats[] = {
 };
 
 static const str_map focus_modes[] = {
-    { CameraParameters::FOCUS_MODE_AUTO,     AF_MODE_AUTO},
+    { CameraParameters::FOCUS_MODE_AUTO,     AF_MODE_NORMAL},
     { CameraParameters::FOCUS_MODE_INFINITY, DONT_CARE },
-    { CameraParameters::FOCUS_MODE_NORMAL,   AF_MODE_NORMAL },
     { CameraParameters::FOCUS_MODE_MACRO,    AF_MODE_MACRO }
 };
 
@@ -2250,10 +2249,8 @@ static uint8_t gps_id[] = {2,2,0,0};
 static char createDateTime[20];
 static rat_t expoTime;
 static rat_t fNum;
-#if SCRITCH_OFF
 static srat_t shutterSpeed;
 static srat_t expoBias;
-#endif//SCRITCH_OFF
 static rat_t focLen;
 static rat_t zoomRatio;
 static rat_t focalLength;
@@ -2516,10 +2513,7 @@ bool SemcCameraHardware::native_jpeg_encode(void)
 	    }
     }
 
-#if SCRITCH_OFF
     setExifParameters();
-
-#endif//SCRITCH_OFF
     //Because of the preview size thumbnail image, we need process to convert for the thumbnail size.
     if(!getThumbnailInternal()){
         LOGD("native_jpeg_encode: getThumbnailInternal is error.");
@@ -5480,10 +5474,10 @@ status_t SemcCameraHardware::setOrientation(const CameraParameters& params)
     const char *str = params.get("orientation");
 
     if (str != NULL) {
-        if (strcmp(str, "portrait") == 0 || strcmp(str, "landscape") == 0) {
+        if (strcmp(str, CAMERAHAL_ORIENTATION_PORTRAIT) == 0 || strcmp(str, CAMERAHAL_ORIENTATION_LANDSCAPE) == 0) {
             // Camera service needs this to decide if the preview frames and raw
             // pictures should be rotated.
-            mParameters.set("orientation", str);
+            mParameters.set(ORIENTATION, str);
         } else {
             LOGD("Invalid orientation value: %s", str);
             return BAD_VALUE;
@@ -6047,7 +6041,7 @@ void SemcCameraHardware::setInitialValue(){
         mParameters.set(initial_setting_value[i].set_key, initial_setting_value[i].set_value);
     }
     mParameters.setPreviewFrameRate(DEFAULT_PREVIEW_FRAME_RATE_EX);
-    //mParameters.setOrientation(CAMERAHAL_ORIENTATION_LANDSCAPE);
+    mParameters.set(ORIENTATION, CAMERAHAL_ORIENTATION_LANDSCAPE);
     focus_mode_values = create_values_str(focus_modes, sizeof(focus_modes) / sizeof(str_map));
     mParameters.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES,
                     focus_mode_values);
@@ -7943,13 +7937,11 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
         return ret;
     }
 
-#if SCRITCH_OFF
     if(false == native_get_exifinfo(mCameraControlFd))
     {
         LOGD("END startrawsnapshot : native_get_exifinfo is error");
         return ret;
     }
-#endif//SCRITCH_OFF
 
     if( native_get_jpegfilesize(mCameraControlFd) == false){
         LOGD("END startrawsnapshot : native_get_jpegfilesize is error.");
@@ -7994,7 +7986,6 @@ bool SemcCameraHardware::native_unregister_snapshot_bufs()
 
 
 
-#if SCRITCH_OFF
 /**
  * @brief SemcCameraHardware::native_get_exifinfo
  * @param camfd [IN]  camera open information
@@ -8049,7 +8040,6 @@ bool SemcCameraHardware::native_get_exifinfo(int camfd)
     LOGD("END native_get_exifinfo");
     return true;
 }
-#endif //SCRITCH_OFF
 /**
  * @brief SemcCameraHardware::convertImage864to854
  * @param outBuffer [IN]  854x480 buffer size
@@ -8398,12 +8388,18 @@ char *SemcCameraHardware::getStringvalue(const char *key, int value)
 
     return NULL;
 }
+#endif//SCRITCH_OFF
 /**
  * @brief SemcCameraHardware::setExifParameters
  * @return void
  *
  * @brief The setup of exif_tag
  */
+#if 1
+void SemcCameraHardware::setExifParameters()
+{
+}
+#else
 void SemcCameraHardware::setExifParameters()
 {
     LOGD("START setExifParameters : ");
@@ -8566,18 +8562,20 @@ void SemcCameraHardware::setExifParameters()
         if (str != NULL) {
             if (!strcmp(str, CameraParameters::AUTO_EXPOSURE_FRAME_AVG)) {
                 sval = 1;
-            } else if (!strcmp(str, CameraParameters::AUTO_EXPOSURE_CENTER_WEIGHTED)) {
+            } else if (!strcmp(str, CameraParameters::AUTO_EXPOSURE_CENTER_WEIGHTED))            {
                 sval = 2;
             } else if (!strcmp(str, CameraParameters::AUTO_EXPOSURE_SPOT_METERING)) {
                 sval = 3;
             }
         }
+#if SCRITCH_OFF
         str = mParameters.get(CameraParameters::FACE_DETECTION);
         if (str != NULL) {
             if ((strcmp(str, CameraParameters::FACE_DETECTION_ON) == 0)) {
                 sval = 255;
             }
         }
+#endif
         addExifTag(EXIFTAGID_METERING_MODE, EXIF_SHORT, 1, 1, (void *)&sval);
 
         /* Light Source */
@@ -8635,7 +8633,6 @@ void SemcCameraHardware::setExifParameters()
 
     LOGD("END setExifParameters : ");
 }
-
 #endif
  /**
  * @brief SemcCameraHardware::receiveExifData

@@ -156,6 +156,12 @@ typedef struct {
         int otherval;
 } rat_t;
 
+typedef struct {
+        int val;
+        int otherval;
+} srat_t;
+
+
 
 typedef union {
         char * _ascii; /* At byte 16 relative to exif_tag_entry_t */
