@@ -175,6 +175,22 @@ extern void (*mmcamera_jpeg_callback)(jpeg_event_t status);
 extern void (*mmcamera_shutter_callback)(common_crop_t *crop);
 #endif
 
+typedef struct ipl_image_struct{
+    uint32_t  dx;            // Number of pixels in the x dirctn or in a row
+    uint32_t  dy;            // Number of pixels in the y dirctn or in a col
+    uint32_t cFormat;        // JUST A GUESS
+    unsigned char* imgPtr; // Pointer to the image data
+    uint8_t* clrPtr;         // Pointer to the Color data
+
+}ipl_image_type;
+
+#define ipl_bip_type void
+
+int (*LINK_ipl_downsize)(ipl_image_type* input_img_ptr,
+                                     ipl_image_type* output_img_ptr,
+                                     ipl_bip_type*   bip_ptr);
+
+
 
 
 /* #define CAMERA_FIRMWARE_UPDATE */
@@ -1147,9 +1163,9 @@ bool SemcCameraHardware::startCamera()
         ::dlsym(libmmcamera, "camanalysis_callback");
 
     *LINK_camanalysis_callback = mm_camanalysis_callback;
+#endif//SCRITCH_OFF
     *(void **)&LINK_ipl_downsize =
         ::dlsym(libmmipl, "ipl_downsize");
-#endif//SCRITCH_OFF
 #ifdef CAMERA_FIRMWARE_UPDATE
     *(void **)&LINK_sensor_set_firmware_fd =
         ::dlsym(libmmcamera, "sensor_set_firmware_fd");
@@ -8216,9 +8232,9 @@ bool SemcCameraHardware::getThumbnailInternal()
         return false;
     }
 
-#if SCRITCH_OFF
     ipl_image_type yuv420_img_ptr;
     ipl_image_type yuv420_thumbnail_img_ptr;
+    #define IPL_YCrCb420_LINE_PK 1
 
     yuv420_img_ptr.dx      = picture_width;
     yuv420_img_ptr.dy      = picture_height;
@@ -8231,14 +8247,14 @@ bool SemcCameraHardware::getThumbnailInternal()
     yuv420_thumbnail_img_ptr.cFormat = IPL_YCrCb420_LINE_PK;
     yuv420_thumbnail_img_ptr.imgPtr  = (unsigned char*)yuv420Heap->mHeap->base();
     yuv420_thumbnail_img_ptr.clrPtr  = (uint8_t*)yuv420Heap->mHeap->base() + ( thumbnail_width * thumbnail_height );
-
+    int res = LINK_ipl_downsize(&yuv420_img_ptr, &yuv420_thumbnail_img_ptr, NULL);
+    LOGD("%s_ received %d", __FUNCTION__, res);
     //Downsize
-    if(IPL_SUCCESS != LINK_ipl_downsize(&yuv420_img_ptr, &yuv420_thumbnail_img_ptr, NULL)){
+    if(1 != res){
         LOGD("getThumbnailInternal :ipl_downsize Error");
         yuv420Heap.clear();
         return false;
     }
-#endif//SCRITCH_OFF
 
     //16:9 Thumbnail size -> Size cut 216x120 to 160x120
     if(CAMERAHAL_PICSIZE_FULLHD == mCameraPicsize || CAMERAHAL_PICSIZE_4MWIDE == mCameraPicsize || CAMERAHAL_PICSIZE_6M == mCameraPicsize){
