@@ -185,6 +185,11 @@ struct camera_size_type {
     int width;
     int height;
 };
+struct camera_nv_data_t{
+    unsigned char * nv_buf;
+    uint16_t len;
+    int kind;
+};
 
 #define CAMERA_INT_MAP_MAX_DIGIT 31
 struct camera_int_map_type {
@@ -476,14 +481,14 @@ typedef enum{
 
 
 typedef struct rational_t{
-    short numerator;
-    short denominator;
+    unsigned int numerator;
+    unsigned int denominator;
 }rational_t; 
 
 
 typedef struct srational_t{
-    short numerator;
-    short denominator;
+    int numerator;
+    int denominator;
 }srational_t; 
 
 
@@ -762,8 +767,8 @@ private:
     void setGpsParameters();
     void storePreviewFrameForPostview();
 
-#if 0
     status_t setSceneMode(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
+#if 0
     status_t setSceneRecognition(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
 
     status_t setExposureCompensation(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);

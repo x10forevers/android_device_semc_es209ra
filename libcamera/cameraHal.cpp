@@ -755,7 +755,7 @@ qcamera_cancel_picture(struct camera_device * device)
 int
 qcamera_set_parameters(struct camera_device * device, const char *params)
 {
-   LOGD("qcamera_set_parameters: %s\n", params);
+   LOGI("qcamera_set_parameters: %s\n", params);
    g_str = android::String8(params);
    camSettings.unflatten(g_str);
    return qCamera->setParameters(camSettings);
@@ -771,7 +771,7 @@ qcamera_get_parameters(struct camera_device * device)
    CameraHAL_FixupParams(camSettings);
    g_str = camSettings.flatten();
    rc = strdup((char *)g_str.string());
-   LOGD("camera_get_parameters: returning rc:%p :%s\n",
+   LOGI("camera_get_parameters: returning rc:%p :%s\n",
         rc, (rc != NULL) ? rc : "EMPTY STRING");
    return rc;
 }

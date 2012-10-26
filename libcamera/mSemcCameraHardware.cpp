@@ -332,6 +332,19 @@ static const str_map picture_formats[] = {
     {CameraParameters::PIXEL_FORMAT_JPEG,               PICTURE_FORMAT_JPEG}
 };
 
+static const str_map scene_mode[] = {
+    {CameraParameters::SCENE_MODE_AUTO,                 CAMERA_BESTSHOT_AUTO},
+    {CameraParameters::SCENE_MODE_PORTRAIT,             CAMERA_BESTSHOT_PORTRAIT},
+    {CameraParameters::SCENE_MODE_LANDSCAPE,            CAMERA_BESTSHOT_LANDSCAPE},
+    {CameraParameters::SCENE_MODE_NIGHT,                CAMERA_BESTSHOT_NIGHT},
+    {CameraParameters::SCENE_MODE_NIGHT_PORTRAIT,       CAMERA_BESTSHOT_NIGHT_PORTRAIT},
+    {CameraParameters::SCENE_MODE_BEACH,                CAMERA_BESTSHOT_SNOW},
+    {CameraParameters::SCENE_MODE_SNOW,                 CAMERA_BESTSHOT_SNOW},
+    {CameraParameters::SCENE_MODE_SPORTS,               CAMERA_BESTSHOT_SPORTS},
+    {CameraParameters::SCENE_MODE_PARTY,                CAMERA_BESTSHOT_PARTY}
+};
+
+
 static const str_map focus_modes[] = {
     { CameraParameters::FOCUS_MODE_AUTO,     AF_MODE_NORMAL},
     { CameraParameters::FOCUS_MODE_INFINITY, DONT_CARE },
@@ -599,7 +612,7 @@ static struct msm_frame * cam_frame_get_video()
            p = (struct msm_frame *)node->f;
            free (node);
        }
-       LOGD("cam_frame_get_video... out = %x\n", p->buffer);
+       LOGD("cam_frame_get_video... out = %lx\n", p->buffer);
     }
     return p;
 }
@@ -637,7 +650,7 @@ static void cam_frame_post_video (struct msm_frame *p)
     pthread_mutex_unlock(&(g_busy_frame_queue.mut));
     pthread_cond_signal(&(g_busy_frame_queue.wait));
 
-    LOGD("cam_frame_post_video... out = %x\n", p->buffer);
+    LOGD("cam_frame_post_video... out = %lx\n", p->buffer);
 
     return;
 }
@@ -784,9 +797,7 @@ SemcCameraHardware::SemcCameraHardware()
             break;
     }
 
-#if SCRITCH_OFF
     memset(&mExifInfo, 0, sizeof(exifinfo_t));
-#endif//SCRITCH_OFF
     memset(&mKeyScene, NULL, SET_PARAM_KEY_SCENE_LENGTH);
     memset(&mSceneMode, NULL, CAMERA_STRING_VALUE_MAXLEN);
     memset(&mWhitebalance, NULL, CAMERA_STRING_VALUE_MAXLEN);
@@ -810,7 +821,7 @@ SemcCameraHardware::SemcCameraHardware()
 void SemcCameraHardware::filterPreviewSizes(){
 
     unsigned int bitMask = 0;
-    int prop = 0;
+    unsigned int prop = 0;
     for(prop=0;prop<sizeof(boardProperties)/sizeof(board_property);prop++){
         if(mCurrentTarget == boardProperties[prop].target){
             bitMask = boardProperties[prop].previewSizeMask;
@@ -1199,7 +1210,6 @@ bool SemcCameraHardware::startCamera()
         LOGD("failed to launch the camera config thread");
         goto errall;
     }
-#if SCRITCH_OFF
     if (!scene_nv_data_initialized) {
         memset(&scene_nv_data, 0, sizeof(scene_nv_data));
         if(native_get_scene_nv(mCameraControlFd, scene_nv_data, sizeof(scene_nv_data)) == false) {
@@ -1209,7 +1219,6 @@ bool SemcCameraHardware::startCamera()
         scene_nv_data_initialized = true;
         LOGD("%s: scene_nv_data is initialized", __FUNCTION__);
     }
-#endif//SCRITCH_OFF
 
     memset(&mSensorInfo, 0, sizeof(mSensorInfo));
     if (ioctl(mCameraControlFd,
@@ -2074,6 +2083,7 @@ static bool native_set_aeaf_position(int camfd, setAeAfPosition_t position, int 
     return true;
 }
 
+#endif//SCRITCH_OFF
 /**
  * @brief native_get_scene_nv
  * @param camfd [IN]  camera open information
@@ -2094,7 +2104,7 @@ static bool native_get_scene_nv(int camfd, void *pBuffer, int size)
 
     nv_data_type.nv_buf = (unsigned char *)pBuffer;
     nv_data_type.len = (uint16_t)size;
-    nv_data_type.kind = CAMERA_NV_KIND_ASS;
+    nv_data_type.kind = 1;//CAMERA_NV_KIND_ASS;
 
     ctrlCmd.timeout_ms = DRV_TIMEOUT_5K;
     ctrlCmd.type       = CAMERA_GET_PARM_NV_DATA;
@@ -2110,7 +2120,6 @@ static bool native_get_scene_nv(int camfd, void *pBuffer, int size)
     return true;
 }
 
-#endif//SCRITCH_OFF
 /**
  * @brief native_get_jpegfilesize
  * @param camfd [IN]  camera open information
@@ -2278,10 +2287,18 @@ static void addExifTag(exif_tag_id_t tagid, exif_tag_type_t type,
         exif_data[index].tag_entry.data._rats = (rat_t *)data;
     if((type == EXIF_RATIONAL) && (count == 1))
         exif_data[index].tag_entry.data._rat = *(rat_t *)data;
+    if((type == EXIF_SRATIONAL) && (count > 1))
+        exif_data[index].tag_entry.data._srats = (srat_t *)data;
+    if((type == EXIF_SRATIONAL) && (count == 1))
+        exif_data[index].tag_entry.data._srat = *(srat_t *)data;
+    if(type == EXIF_SHORT)
+        exif_data[index].tag_entry.data._short = *(uint16_t *)data;
+    if(type == EXIF_UNDEFINED)
+        exif_data[index].tag_entry.data._undefined = (uint8_t *)data;
     if(type == EXIF_ASCII)
         exif_data[index].tag_entry.data._ascii = (char *)data;
-    //if((type == EXIF_BYTE) && (count > 1))
-    //    exif_data[index].tag_entry.data._bytes = (uint8_t *)data;
+    if((type == EXIF_BYTE) && (count > 1))
+        exif_data[index].tag_entry.data._bytes = (uint8_t *)data;
     if((type == EXIF_BYTE) && (count == 1))
         exif_data[index].tag_entry.data._byte = *(uint8_t *)data;
 
@@ -2361,7 +2378,6 @@ void SemcCameraHardware::setGpsParameters() {
     const char *str_semc_ref = NULL;
     bool  use_semc_ref;
 
-#if SCRITCH_OFF
     /* gps version id */
     addExifTag(EXIFTAGID_GPS_VERSION_ID, EXIF_BYTE, 4, 0, (void *)&gps_id);
 
@@ -2383,7 +2399,6 @@ void SemcCameraHardware::setGpsParameters() {
                         1, (void *)latref);
         }
     }
-#endif//SCRITCH_OFF
     str = NULL;
     str_semc_ref = NULL;
 
@@ -2420,7 +2435,7 @@ void SemcCameraHardware::setGpsParameters() {
         // check if QC /SEMC specific key is used
         int semc_ref = mParameters.getInt(CameraParameters::KEY_GPS_ALTITUDE_REF);
         if( !(semc_ref < 0 || semc_ref > 1) ) {
-            LOGD("Using SEMC ALTITUDE_REF: '%s'", semc_ref);
+            LOGD("Using SEMC ALTITUDE_REF: '%d'", semc_ref);
             ref = semc_ref;
         }
 
@@ -2428,38 +2443,34 @@ void SemcCameraHardware::setGpsParameters() {
         addExifTag(EXIFTAGID_GPS_ALTITUDE_REF, EXIF_BYTE, 1,
                     1, (void *)&ref);
     }
-#if SCRITCH_OFF
-    /* set GpsTimeStamp */
-    if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0) {
-        str = NULL;
-        str = mParameters.get(CameraParameters::KEY_GPS_TIMESTAMP);
-        if(str != NULL) {
-            long timevalue = atol(str);
-            struct tm *gtm;
-            gtm = gmtime(&timevalue);
-            rat_t stampvalue[3] = { {gtm->tm_hour, 1},
-                                    {gtm->tm_min,  1},
-                                    {gtm->tm_sec,  1} };
-            memcpy(gpstimestamp, stampvalue, sizeof(gpstimestamp));
-            addExifTag(EXIFTAGID_GPS_TIMESTAMP, EXIF_RATIONAL, 3,
-                        1, (void *)&gpstimestamp);
+    str = NULL;
+    str = mParameters.get(CameraParameters::KEY_GPS_TIMESTAMP);
+    if(str != NULL) {
+          long timevalue = atol(str);
+          struct tm *gtm;
+          gtm = gmtime(&timevalue);
+          rat_t stampvalue[3] = { {gtm->tm_hour, 1},
+                                  {gtm->tm_min,  1},
+                                  {gtm->tm_sec,  1} };
+          memcpy(gpstimestamp, stampvalue, sizeof(gpstimestamp));
+          addExifTag(EXIFTAGID_GPS_TIMESTAMP, EXIF_RATIONAL, 3,
+                      1, (void *)&gpstimestamp);
 
-        /*set GpsDateStamp*/
+      /*set GpsDateStamp*/
 
-        char date[11];
-        memset(date, 0x00, sizeof(date));
-        memset(gpsDateTime, 0x00, sizeof(gpsDateTime));
+      char date[11];
+      memset(date, 0x00, sizeof(date));
+      memset(gpsDateTime, 0x00, sizeof(gpsDateTime));
 
-        sprintf(date,"%04d:%02d:%02d",gtm->tm_year,gtm->tm_mon,
-        gtm->tm_mday);
+      sprintf(date,"%04d:%02d:%02d",gtm->tm_year,gtm->tm_mon,
+      gtm->tm_mday);
 
-        if (strlen(date) >= 1) {
-        strncpy(gpsDateTime, date, 10);
-        gpsDateTime[10] = '\0';
-                LOGD("GPS DateStamp is %s", gpsDateTime);
-        addExifTag(EXIFTAGID_GPS_DATESTAMP, EXIF_ASCII,
-                    11, 1, (void *)&gpsDateTime);
-        }
+      if (strlen(date) >= 1) {
+      strncpy(gpsDateTime, date, 10);
+      gpsDateTime[10] = '\0';
+              LOGD("GPS DateStamp is %s", gpsDateTime);
+      addExifTag(EXIFTAGID_GPS_DATESTAMP, EXIF_ASCII,
+                  11, 1, (void *)&gpsDateTime);
       }
     }
     /* set ProcessingMethod */
@@ -2472,7 +2483,6 @@ void SemcCameraHardware::setGpsParameters() {
             addExifTag(EXIFTAGID_GPS_PROCESSINGMETHOD, EXIF_UNDEFINED,
                 EXIF_ASCII_PREFIX_LEN+strlen(str), 1, (void *)gpsProcessingMethod);
         }
-#endif//SCRITCH_OFF
 }
 
 bool SemcCameraHardware::native_jpeg_encode(void)
@@ -2718,7 +2728,7 @@ void SemcCameraHardware::runVideoThread(void *data)
 
         if(vframe != NULL) {
             // Find the offset within the heap of the current buffer.
-            LOGD("Got video frame :  buffer %d base %d ", vframe->buffer, mRecordHeap->mHeap->base());
+            LOGD("Got video frame :  buffer %ld base %p ", vframe->buffer, mRecordHeap->mHeap->base());
             ssize_t offset =
                 (ssize_t)vframe->buffer - (ssize_t)mRecordHeap->mHeap->base();
             LOGD("offset = %d , alignsize = %d , offset later = %d", offset, mRecordHeap->mAlignedBufferSize, (offset / mRecordHeap->mAlignedBufferSize));
@@ -3073,9 +3083,7 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
 
     if (mThumbnailHeap != NULL) {
         mThumbnailHeap.clear();
-#if SCRITCH_OFF
         memset(&mExifInfo, 0, sizeof(exifinfo_t));
-#endif//SCRITCH_OFF
     }
 
     mRawSize = mDimension.postview_width * mDimension.postview_height * 1.5;
@@ -4027,14 +4035,12 @@ status_t SemcCameraHardware::takePicture()
     sprintf(getTime,"%04d:%02d:%02d %02d:%02d:%02d",ltm->tm_year+1900,ltm->tm_mon+1,
             ltm->tm_mday,ltm->tm_hour,ltm->tm_min,ltm->tm_sec);
 
-#if SCRITCH_OFF
     if (strlen(getTime) >= 1) {
         strncpy(createDateTime, getTime, 19);
         createDateTime[19] = '\0';
         addExifTag(EXIFTAGID_FILE_CHANGE_DATE_TIME, EXIF_ASCII,
                     20, 1, (void *)createDateTime);
     }
-#endif//SCRITCH_OFF
 
     mShutterLock.lock();
     mShutterPending = true;
@@ -4112,12 +4118,15 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
         if (rc = setPreviewSize(params)){
             final_rc = rc;
         }
+        LOGD("final_rc = %d", final_rc);
         if (rc = setPictureSize(params)){
             final_rc = rc;
         }
+        LOGD("final_rc = %d", final_rc);
         if (native_step_zoom(mCameraControlFd, mZoom) == false){
             final_rc = UNKNOWN_ERROR;
         }
+        LOGD("final_rc = %d", final_rc);
 #if SCRITCH_OFF
         if (rc = setAfMode(params)){
             final_rc = rc;
@@ -4130,13 +4139,13 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
         if (rc = setFocusMode(params)){
             final_rc = rc;
         }
+        LOGD("final_rc = %d", final_rc);
         return final_rc;
     }
-#if SCRITCH_OFF
     if (((rc = setSceneMode(params)))){
         final_rc = rc;
     }
-#endif//SCRITCH_OFF
+        LOGD("final_rc = %d", final_rc);
 
     //Save the Video Size here
     {
@@ -4146,36 +4155,52 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
     }
 
     if ((rc = setPreviewSize(params)))  final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setPictureSize(params)))  final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setJpegQuality(params)))  final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setAutoExposure(params))) final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setWhiteBalance(params))) final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setGpsLocation(params)))  final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setRotation(params)))     final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setFocusMode(params)))    final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setBrightness(params)))   final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setPictureFormat(params))) final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
 //Use J setFlash Function
     if ((rc = setFlash(params)))        final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
 #if SCRITCH_OFF
     if ((rc = setExposureCompensation(params))) final_rc = rc;
     if ((rc = setFlashlightBrightness(params))) final_rc = rc;
 #endif//SCRITCH_OFF
     if ((rc = setJpegThumbnailSize(params))) final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     if ((rc = setPreviewFpsRange(params))) final_rc = rc;
+        LOGD("final_rc = %d", final_rc);
     /* case 3rdparty */
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0)
     {
         if ((rc = setAntibanding(params))){
             final_rc = rc;
         }
+        LOGD("final_rc = %d", final_rc);
         if ((rc = setEffect(params))){
             final_rc = rc;
         }
         if (((rc = setFramerate(params)))){
             final_rc = rc;
         }
+        LOGD("final_rc = %d", final_rc);
         setOrientation(params);
+        LOGD("final_rc = %d", final_rc);
     }
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0)
     {
@@ -6046,11 +6071,9 @@ void SemcCameraHardware::setInitialValue(){
     mParameters.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES,
                     focus_mode_values);
 
-#if SCRITCH_OFF
     scene_mode_values = create_values_str(scene_mode, sizeof(scene_mode) / sizeof(str_map));
     mParameters.set(CameraParameters::KEY_SUPPORTED_SCENE_MODES,
                     scene_mode_values);
-#endif//SCRITCH_OFF
     mZoom = 1;
     LOGD("END setInitialValue");
 }
@@ -6069,6 +6092,8 @@ void SemcCameraHardware::setCallbacks(notify_callback notify_cb,
     mCallbackCookie = user;
     LOGD("END setCallbacks(SEMC)");
 }
+
+#endif//SCRITCH_OFF
 
 
 status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
@@ -6093,8 +6118,9 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
         LOGD("setSceneMode : Get string name[%s] ]", str );
 
     }
+    value = attr_lookup(scene_mode, sizeof(scene_mode) / sizeof(str_map), str, int_value);
 
-    if(value != NOT_FOUND) {
+    //if(value != NOT_FOUND) {
         if(true == mPreviewFlag){
             if((strcmp(mSceneMode, str) != 0) || (strcmp(mKeyScene, CameraParameters::KEY_SCENE_MODE) != 0)){
                 if(true != native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE, sizeof(value), (void *)&value)) {
@@ -6112,7 +6138,6 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
                     case CAMERA_BESTSHOT_SPORTS:
                     case CAMERA_BESTSHOT_NIGHT:
                     case CAMERA_BESTSHOT_NIGHT_PORTRAIT:
-                    case CAMERA_BESTSHOT_DOCUMENT:
                     case CAMERA_BESTSHOT_PARTY:
                         strcpy(mWhitebalance, CameraParameters::WHITE_BALANCE_AUTO);
                         break;
@@ -6135,27 +6160,8 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
                     }
                 }
             }else{
-                if(true == collective) {
-                    if(true != native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE, sizeof(value), (void *)&value)) {
-                        LOGD("END native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE) : ERROR");
-                        return UNKNOWN_ERROR;
-                    }
-                    if((strcmp(str, CAMERA_DEFAULT_VALUE) != 0)) {
-                        strcpy(mSceneMode, str);
-                    }
-                    strcpy(mKeyScene, CameraParameters::KEY_SCENE_MODE);
-                    /* case 3rdparty */
-                    if ( ((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0 ) {
-                        if(CAMERAHAL_PREVIEW_FRAME_RATE_SET_FROM_SCENE == mFrameRateSetFrom) {
-                            if(true != native_set_parm(CAMERA_SET_PARM_FPS, sizeof(framerate), (void *)&framerate)) {
-                                LOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
-                                return UNKNOWN_ERROR;
-                            }
-                        }
-                    }
-                }else{
-                    LOGD("setSceneMode :Scene mode has already been setting.");
-                }
+                LOGD("%s Scene mode has already been set", __FUNCTION__);
+                
             }
         }
         //ParametersClass setting.
@@ -6166,10 +6172,11 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
         }
         LOGD("END setSceneMode : NO_ERROR");
         return NO_ERROR;
-    }
-    LOGD("END setSceneMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    //}
+    //LOGD("END setSceneMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
+#if SCRITCH_OFF
 status_t SemcCameraHardware::setSceneRecognition(const CameraParameters& params,
                                               const char *key /* = NULL */,
                                               const char *str_value /* = NULL */,
@@ -7190,6 +7197,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
                 }
             }
         }
+ #endif//SCRITCH_OFF
         //SceneMode
         if(strcmp(key, CameraParameters::KEY_SCENE_MODE) == 0) {
             if(setSceneMode(params, key, NULL, value) != NO_ERROR) {
@@ -7201,7 +7209,6 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         }
         //WhiteBalance
         else
- #endif//SCRITCH_OFF
          if(strcmp(key, CameraParameters::KEY_WHITE_BALANCE) == 0){
             if(setWhiteBalance(params, key, NULL, value) != NO_ERROR) {
                 LOGD("END setParameters(Separate Setting) : setWhiteBalance is error.");
@@ -8398,6 +8405,198 @@ char *SemcCameraHardware::getStringvalue(const char *key, int value)
 #if 1
 void SemcCameraHardware::setExifParameters()
 {
+    LOGD("START setExifParameters : ");
+
+    const char *str = NULL;
+    short sval = 0;
+
+    memset(maker, 0x00, sizeof(maker));
+    memset(model, 0x00, sizeof(model));
+    memset(dateTime, 0x00, sizeof(dateTime));
+    memset(desc, 0x00, sizeof(desc));
+
+    /* 0th IFD TIFF Tags */
+    /* description */
+    snprintf(desc, strlen("scritch007 camera lib"), "scritch007 camera_lib");
+    addExifTag(EXIFTAGID_IMAGE_DESCRIPTION, EXIF_ASCII, (strlen(desc)+2), 1, (void *)desc);
+
+    /* maker */
+    property_get("ro.product.brand",maker,"");
+    if (strlen(maker) >= 1) {
+        addExifTag(EXIFTAGID_EXIF_CAMERA_MAKER, EXIF_ASCII, (strlen(maker))+1, 1, (void *)maker);
+    }
+
+    /* model */
+    property_get("ro.product.device",model,"");
+    if (strlen(model) >= 1) {
+        addExifTag(EXIFTAGID_EXIF_CAMERA_MODEL, EXIF_ASCII, (strlen(model))+1, 1, (void *)model);
+    }
+
+    /* rotation */
+    int rot = mParameters.getInt(CameraParameters::KEY_ROTATION);
+    if (rot == 90) {
+        sval = 6;
+    } else if (rot == 180) {
+        sval = 3;
+    } else if (rot == 270) {
+        sval = 8;
+    } else {
+        sval = 1;
+    }
+
+    LOGD("%s setting orientation to %d info was %d", __FUNCTION__, sval, rot);
+    addExifTag(EXIFTAGID_ORIENTATION, EXIF_SHORT, 1, 1, (void *)&sval);
+
+    // set focal length tag
+    int focalLengthValue = (int) (mParameters.getFloat(
+                CameraParameters::KEY_FOCAL_LENGTH) * FOCAL_LENGTH_DECIMAL_PRECISON);
+    rat_t focalLengthRational = {focalLengthValue, FOCAL_LENGTH_DECIMAL_PRECISON};
+    memcpy(&focalLength, &focalLengthRational, sizeof(focalLengthRational));
+    addExifTag(EXIFTAGID_FOCAL_LENGTH, EXIF_RATIONAL, 1,
+                1, (void *)&focalLength);
+
+
+    /* YCbCrPositioning */
+    sval = 2;
+    addExifTag(EXIFTAGID_YCBCR_POSITIONING, EXIF_SHORT, 1, 1, (void *)&sval);
+
+    /* 0th Exif Tags */
+    /* exposure time */
+    expoTime.num   = mExifInfo.exposure_time.numerator;
+    expoTime.denom = mExifInfo.exposure_time.denominator;
+    addExifTag(EXIFTAGID_EXPOSURE_TIME, EXIF_RATIONAL, 1, 1, (void *)&expoTime);
+
+    /* Flash */
+    short flash_sval = 0;
+    str = mParameters.get(CameraParameters::KEY_FLASH_MODE);
+
+    if (str != NULL) {
+       int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
+       if (value != NOT_FOUND) {
+            bool shouldBeOn = strcmp(str, "on") == 0;
+            flash_sval = shouldBeOn?1:0;
+       }
+    }
+
+    addExifTag(EXIFTAGID_FLASH, EXIF_SHORT, 1, 1, (void *)&flash_sval);
+
+    sval = 0;
+    addExifTag(EXIFTAGID_EXPOSURE_MODE, EXIF_SHORT, 1, 1, (void *)&sval);
+
+    /* White Balance */
+    sval = 0;
+    str = mParameters.get(CameraParameters::KEY_WHITE_BALANCE);
+    if (str != NULL) {
+        if (!strcmp(str, CameraParameters::WHITE_BALANCE_AUTO)) {
+            sval = 0;
+        } else {
+            sval = 1;
+        }
+        addExifTag(EXIFTAGID_WHITE_BALANCE, EXIF_SHORT, 1, 1, (void *)&sval);
+    }
+
+    /* Scene Capture Mode */
+    sval = 0;
+    str = mParameters.get(CameraParameters::KEY_SCENE_MODE);
+    if (str != NULL) {
+        if (!strcmp(str, CameraParameters::SCENE_MODE_AUTO)) {
+            sval = 0;
+        } else if (!strcmp(str, CameraParameters::SCENE_MODE_PORTRAIT)) {
+            sval = 0;
+        } else if (!strcmp(str, CameraParameters::SCENE_MODE_LANDSCAPE)) {
+            sval = 1;
+        } else if (!strcmp(str, CameraParameters::SCENE_MODE_NIGHT)) {
+            sval = 3;
+        } else if (!strcmp(str, CameraParameters::SCENE_MODE_NIGHT_PORTRAIT)) {
+            sval = 0;
+        } else if (!strcmp(str, CameraParameters::SCENE_MODE_SPORTS)) {
+            sval = 0;
+        } else if (!strcmp(str, CameraParameters::SCENE_MODE_PARTY)) {
+            sval = 2;
+        }
+        addExifTag(EXIFTAGID_SCENE_CAPTURE_TYPE, EXIF_SHORT, 1, 1, (void *)&sval);
+    }
+
+        /* F number */
+        fNum.num   = 0x001C;
+        fNum.denom = 0x000A;
+        addExifTag(EXIFTAGID_F_NUMBER, EXIF_RATIONAL, 1, 1, (void *)&fNum);
+
+        /* ISO Speed Ratings */
+        sval = (short)mExifInfo.iso_speed;
+        addExifTag(EXIFTAGID_ISO_SPEED_RATINGS, EXIF_SHORT, 1, 1, (void *)&sval);
+
+        /* Data Time Original */
+        addExifTag(EXIFTAGID_EXIF_DATE_TIME_ORIGINAL, EXIF_ASCII,
+                        20, 1, (void *)createDateTime);
+
+        /* Data Time Digitized */
+        addExifTag(EXIFTAGID_EXIF_DATE_TIME_DIGITIZED, EXIF_ASCII,
+                        20, 1, (void *)createDateTime);
+
+        /* Shutter Speed */
+        shutterSpeed.num   = mExifInfo.shutter_speed.numerator;
+        shutterSpeed.denom = mExifInfo.shutter_speed.denominator;
+        addExifTag(EXIFTAGID_SHUTTER_SPEED, EXIF_SRATIONAL, 1, 1, (void *)&shutterSpeed);
+
+        /* Exposure Bias */
+        expoBias.num   = mExifInfo.exposure_value.numerator;
+        expoBias.denom = mExifInfo.exposure_value.denominator;
+        addExifTag(EXIFTAGID_EXPOSURE_BIAS_VALUE, EXIF_SRATIONAL, 1, 1, (void *)&expoBias);
+
+    /* Custom Rendered */
+    str = mParameters.get(CameraParameters::KEY_EFFECT);
+    if (str != NULL) {
+        if (!strcmp(str, CameraParameters::EFFECT_NONE)) {
+            sval = 0;
+        } else {
+            sval = 1;
+        }
+        addExifTag(EXIFTAGID_CUSTOM_RENDERED, EXIF_SHORT, 1, 1, (void *)&sval);
+    }
+
+        /* Light Source */
+        sval = 0;
+        if (0x01 & flash_sval) {
+            str = mParameters.get(CameraParameters::KEY_WHITE_BALANCE);
+            if (str != NULL) {
+                if (!strcmp(str, CameraParameters::WHITE_BALANCE_AUTO)) {
+                    sval = 0;
+                } else if (!strcmp(str, CameraParameters::WHITE_BALANCE_DAYLIGHT)) {
+                    sval = 9;
+                } else if (!strcmp(str, CameraParameters::WHITE_BALANCE_CLOUDY_DAYLIGHT)) {
+                    sval = 10;
+                } else if (!strcmp(str, CameraParameters::WHITE_BALANCE_FLUORESCENT)) {
+                    sval = 2;
+                } else if (!strcmp(str, CameraParameters::WHITE_BALANCE_INCANDESCENT)) {
+                    sval = 3;
+                } else {
+                    sval = 0;
+                }
+            } else {
+                sval = 0;
+            }
+        }
+        addExifTag(EXIFTAGID_LIGHT_SOURCE, EXIF_SHORT, 1, 1, (void *)&sval);
+
+        /* Zoom Ratio */
+        #define DEV_CAMERA_ZOOM_MAX_RATIO 16
+        #define DEV_CAMERA_ZOOM_MIN_RATIO 1
+        #define DEV_CAMERA_ZOOM_MIN_STEP  1
+
+        zoomRatio.num = ((DEV_CAMERA_ZOOM_MAX_RATIO - DEV_CAMERA_ZOOM_MIN_RATIO) * 100 )
+                / (mMaxZoom - DEV_CAMERA_ZOOM_MIN_STEP)
+                * (mZoom - 1) + 100;
+
+        zoomRatio.denom = 0x0064;
+        addExifTag(EXIFTAGID_DIGITAL_ZOOM_RATIO, EXIF_RATIONAL, 1, 1, (void *)&zoomRatio);
+
+        /* Subject Distance Range */
+        sval = (short)mExifInfo.distance_range;
+        addExifTag(EXIFTAGID_SUBJECT_DISTANCE_RANGE, EXIF_SHORT, 1, 1, (void *)&sval);
+
+
+ 
 }
 #else
 void SemcCameraHardware::setExifParameters()
@@ -8442,7 +8641,7 @@ void SemcCameraHardware::setExifParameters()
     addExifTag(EXIFTAGID_ORIENTATION, EXIF_SHORT, 1, 1, (void *)&sval);
 
 
-      // set focal length tag
+    // set focal length tag
     int focalLengthValue = (int) (mParameters.getFloat(
                 CameraParameters::KEY_FOCAL_LENGTH) * FOCAL_LENGTH_DECIMAL_PRECISON);
     rat_t focalLengthRational = {focalLengthValue, FOCAL_LENGTH_DECIMAL_PRECISON};
@@ -8517,8 +8716,6 @@ void SemcCameraHardware::setExifParameters()
         } else if (!strcmp(str, CameraParameters::SCENE_MODE_BEACH_SNOW)) {
             sval = 0;
         } else if (!strcmp(str, CameraParameters::SCENE_MODE_SPORTS)) {
-            sval = 0;
-        } else if (!strcmp(str, CameraParameters::SCENE_MODE_DOCUMENT)) {
             sval = 0;
         } else if (!strcmp(str, CameraParameters::SCENE_MODE_PARTY)) {
             sval = 2;
