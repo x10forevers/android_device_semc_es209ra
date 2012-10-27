@@ -65,6 +65,11 @@ typedef struct camera_start_auto_focus_t{
     int camera_focus_lock;
 } camera_start_auto_focus_t;
 
+typedef struct camera_ae_awb_lock_t{
+    int camera_ae_lock;
+    int camera_awb_lock;
+}camera_ae_awb_lock_t;
+
 
 #define CAMERA_AE_LOCK 1
 #define CAMERA_AE_UNLOCK 0
@@ -496,18 +501,21 @@ typedef struct camera_exif_t{
     rational_t exposure_time;
     srational_t shutter_speed_value;
     srational_t exposure_bias_value;
-    unsigned int iso_speed_ratings;
-    unsigned int flash;
-    unsigned int subject_distance_range;
+    short iso_speed_ratings;
+    short flash;
+    short subject_distance_range;
+    unsigned int filler1;
+    unsigned int filler2;
+    unsigned int filler3;
 }camera_exif_t;
 
 typedef struct exifinfo_t{
     rational_t      exposure_time;
     srational_t     shutter_speed;
     srational_t     exposure_value;
-    unsigned int    iso_speed;
-    unsigned int    flash;
-    unsigned int    distance_range;
+    short           iso_speed;
+    short           flash;
+    short           distance_range;
 }exifinfo_t;
 
 

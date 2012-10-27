@@ -1979,7 +1979,8 @@ static bool native_step_zoom(int camfd, int value)
     return true;
 }
 
-#if SCRITCH_OFF
+
+
 /**
  * @brief native_set_ae_awb_lock
  * @param camfd    [IN] Open Information
@@ -2025,6 +2026,7 @@ static bool native_set_ae_awb_lock(int camfd, bool ae_lock, bool awb_lock)
     LOGD("END native_set_ae_awb_lock");
     return true;
 }
+#if SCRITCH_OFF
 /**
  * @brief native_get_firmware_version
  * @param camfd [IN] Open Information
@@ -4007,15 +4009,11 @@ status_t SemcCameraHardware::takePicture()
 	storePreviewFrameForPostview();
     }
 
-#if SCRITCH_OFF
-    if((((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0)){
-        if(native_set_ae_awb_lock(mCameraControlFd, true, true) == false){
-            LOGD("END takePicture : native_set_ae_awb_lock failed!");
-            mSnapshotThreadWaitLock.unlock();
-            return UNKNOWN_ERROR;
-        }
+    if(native_set_ae_awb_lock(mCameraControlFd, true, true) == false){
+        LOGD("END takePicture : native_set_ae_awb_lock failed!");
+        mSnapshotThreadWaitLock.unlock();
+        return UNKNOWN_ERROR;
     }
-#endif//SCRITCH_OFF
 
     //mSnapshotFormat is protected by mSnapshotThreadWaitLock
     if(mParameters.getPictureFormat() != 0 &&
@@ -8009,6 +8007,17 @@ bool SemcCameraHardware::native_unregister_snapshot_bufs()
 
 
 
+#define PRINT_OPAQUE_STRUCT(p) print_mem((p), sizeof(*p))
+void print_mem(void const *vp, size_t n)
+{
+    unsigned char const *p=(unsigned char const*)vp;
+    size_t i;
+    for(i=0;i<n; i++)
+    {
+        LOGD("%s %d %02x", __FUNCTION__, i, p[i]);
+    }
+}
+
 /**
  * @brief SemcCameraHardware::native_get_exifinfo
  * @param camfd [IN]  camera open information
@@ -8031,10 +8040,15 @@ bool SemcCameraHardware::native_get_exifinfo(int camfd)
     ctrlCmd.value      = (void *)&exif_type;
     ctrlCmd.resp_fd    = camfd;
 
+    memset(&exif_type, 0, sizeof(camera_exif_t));
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0){
         LOGD("native_get_exifinfo: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
+
+
+    //PRINT_OPAQUE_STRUCT(&exif_type);
+    
 
     memset(&mExifInfo, 0, sizeof(exifinfo_t));
     mExifInfo.exposure_time.numerator    = exif_type.exposure_time.numerator;
