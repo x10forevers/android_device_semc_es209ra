@@ -790,8 +790,8 @@ private:
     status_t setSmileMode(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
     status_t setFacedetectMode(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
     void setCollectiveSignature();
-    void setCollective3rdParty();
 #endif//0
+    void setCollective3rdParty();
     status_t setGpsLatitude(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1);
     status_t setGpsLatitudeRef(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1);
     status_t setGpsLongitude(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1);
