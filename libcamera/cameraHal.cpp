@@ -38,7 +38,7 @@
 #include "libhardware/modules/gralloc/gralloc_priv.h"
 #endif
 
-#define LOGD LOGV
+#define LOGV LOGD
 
 struct qcom_mdp_rect {
    uint32_t x; 
@@ -394,7 +394,9 @@ void
 CameraHAL_DataCb(int32_t msg_type, const android::sp<android::IMemory>& dataPtr,
                  void *user)
 {
-   LOGV("CameraHAL_DataCb: msg_type:%d user:%p\n", msg_type, user);
+   //LOGV("CameraHAL_DataCb: msg_type:%d user:%p\n", msg_type, user);
+   LOGD("CameraHAL_DataCb: msg_type:%d user:%p\n", msg_type, user);
+
    if (msg_type == CAMERA_MSG_PREVIEW_FRAME) {
       LOGD("%s CAMERA_MSG_PREVIEW_FRAME received", __FUNCTION__);
       int32_t previewWidth, previewHeight;
@@ -411,6 +413,7 @@ CameraHAL_DataCb(int32_t msg_type, const android::sp<android::IMemory>& dataPtr,
          LOGD("CameraHAL_DataCb: Posting data to client\n");
          origData_cb(msg_type, clientData, 0, NULL, user);
          clientData->release(clientData);
+        LOGD("%s: Data released", __FUNCTION__);
       }
    }
 }
@@ -505,10 +508,10 @@ CameraHAL_FixupParams(android::CameraParameters &settings)
                    preview_sizes);
    }
 
-   //if (!settings.get(android::CameraParameters::KEY_SUPPORTED_VIDEO_SIZES)) {
+   if (!settings.get(android::CameraParameters::KEY_SUPPORTED_VIDEO_SIZES)) {
       settings.set(android::CameraParameters::KEY_SUPPORTED_VIDEO_SIZES,
                    video_sizes);
-   //}
+   }
 
    if (!settings.get(android::CameraParameters::KEY_VIDEO_SIZE)) {
       settings.set(android::CameraParameters::KEY_VIDEO_SIZE, preferred_size);
@@ -619,6 +622,8 @@ qcamera_disable_msg_type(struct camera_device * device, int32_t msg_type)
    if (msg_type == 0xfff) {
       msg_type = 0x1ff;
    }
+   if (CAMERA_MSG_PREVIEW_FRAME == msg_type && qCamera->previewEnabled())
+        return;
    qCamera->disableMsgType(msg_type);
 }
 

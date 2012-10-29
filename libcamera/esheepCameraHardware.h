@@ -254,11 +254,13 @@ namespace android {
 static const camera_size_type preview_sizes[] = {
     { 320, 240 }, // QVGA
     { 640, 480 }, //VGA
+#if 0
     { 800, 480 }, //WVGA
     { 848, 480 }, //QR Corder
     { 854, 480 }, //Snapshot FWVGA
     { 864, 480 }, //Video FWVGA
     { 1280, 720}, // 720P, reserved
+#endif
 };
 
 static const camera_size_type picture_sizes[] = {

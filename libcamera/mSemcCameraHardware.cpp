@@ -912,7 +912,7 @@ void SemcCameraHardware::initDefaultParameters()
 
 
         //Set Focus Mode
-        //setInitialValue();
+        setInitialValue();
         parameter_string_initialized = true;
     }
 
@@ -4163,10 +4163,10 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
         LOGD("final_rc = %d", final_rc);
         return final_rc;
     }
+    //BEN QRCODE
     if (((rc = setSceneMode(params)))){
         final_rc = rc;
     }
-        LOGD("final_rc = %d", final_rc);
 
     //Save the Video Size here
     {
@@ -7032,6 +7032,7 @@ void SemcCameraHardware::setCollective3rdParty()
     int ioctlRetVal = true;
 
     /* Scene setting */
+    //BEN QRCODE
     if(setSceneMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
         LOGE("setCollective3rdParty setSceneMode is error.");
     }
@@ -7231,6 +7232,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
  #endif//SCRITCH_OFF
         //SceneMode
         if(strcmp(key, CameraParameters::KEY_SCENE_MODE) == 0) {
+            //BEN QRCODE
             if(setSceneMode(params, key, NULL, value) != NO_ERROR) {
                 LOGE("END setParameters(Separate Setting) : setSceneMode is error.");
                 return NO_ERROR;
@@ -7403,6 +7405,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //SceneMode
         if(strcmp(key, CameraParameters::KEY_SCENE_MODE) == 0) {
             //compare setting value and changing value
+            //BEN QRCODE
             if(setSceneMode(params, key, value) != NO_ERROR) {
                 LOGE("END setParameters(Separate Setting) : setSceneMode is error.");
                 return NO_ERROR;
