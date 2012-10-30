@@ -746,6 +746,12 @@ private:
 
     status_t setPreviewSize(const CameraParameters& params);
     status_t setPictureSize(const CameraParameters& params);
+    status_t setZoom(const CameraParameters& params,
+                                                const char *key = NULL,
+                                                const char *str_value = NULL,
+                                                int int_value = -1,
+                                                bool collective = false);
+
 
     status_t setJpegQuality(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
 
@@ -758,7 +764,7 @@ private:
     status_t setFlash(const CameraParameters& params);
     status_t setGpsLocation(const CameraParameters& params);
     status_t setRotation(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1);
-    status_t setZoom(const CameraParameters& params);
+    //status_t setZoom(const CameraParameters& params);
 
     status_t setFocusMode(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
 

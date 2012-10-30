@@ -448,6 +448,9 @@ setparam_initialize_t initial_setting_value[] = {
     { CameraParameters::KEY_WHITE_BALANCE,                      CameraParameters::WHITE_BALANCE_AUTO              },
     { CameraParameters::KEY_AUTO_EXPOSURE,                      CameraParameters::AUTO_EXPOSURE_CENTER_WEIGHTED   },
     { CameraParameters::KEY_FOCUS_MODE,                         CameraParameters::FOCUS_MODE_AUTO                 },
+    { CameraParameters::KEY_ZOOM,                               "1"},
+    { CameraParameters::KEY_ZOOM_SUPPORTED,                     "true"},                      
+    { CameraParameters::KEY_ZOOM_RATIOS,                        "100,200,250,300,400, 500, 600, 750"},
 };
 #define INITIAL_SETTING_VALUE_COUNT (sizeof(initial_setting_value)/sizeof(setparam_initialize_t))
 
@@ -912,9 +915,10 @@ void SemcCameraHardware::initDefaultParameters()
 
 
         //Set Focus Mode
-        setInitialValue();
         parameter_string_initialized = true;
     }
+
+    setInitialValue();
 
     mParameters.setPreviewSize(DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT);
     mParameters.setVideoSize(DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT);
@@ -1007,6 +1011,11 @@ void SemcCameraHardware::initDefaultParameters()
                     CAMERA_HORIZONTAL_VIEW_ANGLE_DEFAULT);
     mParameters.setFloat(CameraParameters::KEY_VERTICAL_VIEW_ANGLE,
                     CAMERA_VERTICAL_VIEW_ANGLE_DEFAULT);
+
+    int maxZoom;
+    native_get_maxzoom(mCameraControlFd, &maxZoom);
+
+    LOGD("%s FOUND mAX ZOOM %d", __FUNCTION__, maxZoom);
 
     mUseOverlay = useOverlay();
 
@@ -4135,6 +4144,7 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
     Mutex::Autolock l(&mLock);
     status_t rc, final_rc = NO_ERROR;
 
+    setZoom(params);
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0){
         if (rc = setPreviewSize(params)){
             final_rc = rc;
@@ -4181,6 +4191,7 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
         LOGD("final_rc = %d", final_rc);
     if ((rc = setJpegQuality(params)))  final_rc = rc;
         LOGD("final_rc = %d", final_rc);
+
     if ((rc = setAutoExposure(params))) final_rc = rc;
         LOGD("final_rc = %d", final_rc);
     if ((rc = setWhiteBalance(params))) final_rc = rc;
@@ -5092,6 +5103,41 @@ status_t SemcCameraHardware::setJpegQuality(const CameraParameters& params,
     LOGD("%s X", __FUNCTION__);
     return rc;
 }
+status_t SemcCameraHardware::setZoom(const CameraParameters& params,
+                                                const char *key /* = NULL */,
+                                                const char *str_value /* = NULL */,
+                                                int int_value /* = -1 */,
+                                                bool collective /* = false */)
+{
+    LOGD("%s E", __FUNCTION__);
+
+    status_t rc = NO_ERROR;
+    int step_value = params.getInt(CameraParameters::KEY_ZOOM);
+
+    if(key != NULL) {
+        step_value = int_value;
+    }
+    LOGD("%s Provided step %d", __FUNCTION__, step_value);
+    if(1>step_value){
+        step_value = 1;
+    }
+    if(true == mPreviewFlag)
+    {
+      if(native_step_zoom(mCameraControlFd, step_value) == false)
+      {
+         LOGE("END setZoom : native_step_zoom is error.");
+         return UNKNOWN_ERROR;
+      }
+     }
+     mZoom = step_value;
+
+
+    LOGD("%s ZOOM VALUE = %d", __FUNCTION__, mZoom);
+
+    LOGD("%s X", __FUNCTION__);
+    return rc;
+}
+
 
 status_t SemcCameraHardware::setEffect(const CameraParameters& params,
                                               const char *key /* = NULL */,
@@ -5464,17 +5510,17 @@ status_t SemcCameraHardware::setRotation(const CameraParameters& params,
     return rc;
 }
 
-status_t SemcCameraHardware::setZoom(const CameraParameters& params)
-{
-    status_t rc = NO_ERROR;
-
-    LOGD("START setZoom");
-    int32_t zoom_level = params.getInt("zoom");
-    mParameters.set("zoom", zoom_level);
-    LOGD("END setZoom");
-
-    return rc;
-}
+//status_t SemcCameraHardware::setZoom(const CameraParameters& params)
+//{
+//    status_t rc = NO_ERROR;
+//
+//    LOGD("START setZoom");
+//    int32_t zoom_level = params.getInt("zoom");
+//    mParameters.set("zoom", zoom_level);
+//    LOGD("END setZoom");
+//
+//    return rc;
+//}
 
 status_t SemcCameraHardware::setFocusMode(const CameraParameters& params,
                                               const char *key /* = NULL */,
@@ -7335,6 +7381,12 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         else if(strcmp(key, CameraParameters::KEY_JPEG_QUALITY) == 0){
             if(setJpegQuality(params, key, NULL, value) != NO_ERROR) {
                 LOGD("END setParameters(Separate Setting) : setJpegQuality  error.");
+                return NO_ERROR;
+            }
+        }
+        else if (strcmp(key, CameraParameters::KEY_ZOOM) == 0){
+            if(setZoom(params, key, NULL, value) != NO_ERROR){
+                LOGD("%s Failed to set zoom", __FUNCTION__);
                 return NO_ERROR;
             }
         }
