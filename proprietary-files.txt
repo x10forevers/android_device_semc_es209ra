@@ -31,7 +31,6 @@ lib/libwmsts.so
 lib/liboemcamera.so
 lib/libmmjpeg.so
 lib/libmmipl.so
-lib/libcamera.so
 
 ## FIRMWARE
 etc/firmware/yamato_pfp.fw
