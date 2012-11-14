@@ -360,6 +360,28 @@ static const str_map scene_mode[] = {
     {CameraParameters::SCENE_MODE_SPORTS,               CAMERA_BESTSHOT_SPORTS},
     {CameraParameters::SCENE_MODE_PARTY,                CAMERA_BESTSHOT_PARTY}
 };
+static const str_map exposure_compensation[] = {
+    { COMPENSATION_M9,                           CAMERA_EXPOSURE_COMP_M9_3},
+    { COMPENSATION_M8,                           CAMERA_EXPOSURE_COMP_M8_3},
+    { COMPENSATION_M7,                           CAMERA_EXPOSURE_COMP_M7_3},
+    { COMPENSATION_M6,                           CAMERA_EXPOSURE_COMP_M6_3},
+    { COMPENSATION_M5,                           CAMERA_EXPOSURE_COMP_M5_3},
+    { COMPENSATION_M4,                           CAMERA_EXPOSURE_COMP_M4_3},
+    { COMPENSATION_M3,                           CAMERA_EXPOSURE_COMP_M3_3},
+    { COMPENSATION_M2,                           CAMERA_EXPOSURE_COMP_M2_3},
+    { COMPENSATION_M1,                           CAMERA_EXPOSURE_COMP_M1_3},
+    { COMPENSATION_ZERO,                         CAMERA_EXPOSURE_COMP_ZERO},
+    { COMPENSATION_P1,                           CAMERA_EXPOSURE_COMP_P1_3},
+    { COMPENSATION_P2,                           CAMERA_EXPOSURE_COMP_P2_3},
+    { COMPENSATION_P3,                           CAMERA_EXPOSURE_COMP_P3_3},
+    { COMPENSATION_P4,                           CAMERA_EXPOSURE_COMP_P4_3},
+    { COMPENSATION_P5,                           CAMERA_EXPOSURE_COMP_P5_3},
+    { COMPENSATION_P6,                           CAMERA_EXPOSURE_COMP_P6_3},
+    { COMPENSATION_P7,                           CAMERA_EXPOSURE_COMP_P7_3},
+    { COMPENSATION_P8,                           CAMERA_EXPOSURE_COMP_P8_3},
+    { COMPENSATION_P9,                           CAMERA_EXPOSURE_COMP_P9_3}
+};
+
 
 
 static const str_map focus_modes[] = {
@@ -448,9 +470,14 @@ setparam_initialize_t initial_setting_value[] = {
     { CameraParameters::KEY_WHITE_BALANCE,                      CameraParameters::WHITE_BALANCE_AUTO              },
     { CameraParameters::KEY_AUTO_EXPOSURE,                      CameraParameters::AUTO_EXPOSURE_CENTER_WEIGHTED   },
     { CameraParameters::KEY_FOCUS_MODE,                         CameraParameters::FOCUS_MODE_AUTO                 },
+    { CameraParameters::KEY_EXPOSURE_COMPENSATION,               COMPENSATION_ZERO},
+
     { CameraParameters::KEY_ZOOM,                               "1"},
     { CameraParameters::KEY_ZOOM_SUPPORTED,                     "true"},                      
     { CameraParameters::KEY_ZOOM_RATIOS,                        "100,200,250,300,400, 500, 600, 750"},
+    { CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW,          "1"},
+    { CameraParameters::KEY_SUPPORTED_FACE_DETECTION,           "true"},
+    { CameraParameters::KEY_FACE_DETECTION,                     CameraParameters::FACE_DETECTION_OFF},
 };
 #define INITIAL_SETTING_VALUE_COUNT (sizeof(initial_setting_value)/sizeof(setparam_initialize_t))
 
@@ -991,13 +1018,11 @@ void SemcCameraHardware::initDefaultParameters()
 
     mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, framerate_values);
 
-#if SCRITCH_OFF
-    mParameters.set(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION, CameraParameters::M9_3);
-    mParameters.set(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION, CameraParameters::P9_3),
+    mParameters.set(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION, COMPENSATION_M9);
+    mParameters.set(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION, COMPENSATION_P9),
     mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "0.333333333");
-    mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, CameraParameters::ZERO);
+    mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, COMPENSATION_ZERO);
 
-#endif//SCRITCH_OFF
     mParameters.set(CameraParameters::KEY_FLASH_MODE, CameraParameters::FLASH_MODE_ON);
     mParameters.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES, flash_values);
 
@@ -4209,8 +4234,8 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
 //Use J setFlash Function
     if ((rc = setFlash(params)))        final_rc = rc;
         LOGD("final_rc = %d", final_rc);
-#if SCRITCH_OFF
     if ((rc = setExposureCompensation(params))) final_rc = rc;
+#if SCRITCH_OFF
     if ((rc = setFlashlightBrightness(params))) final_rc = rc;
 #endif//SCRITCH_OFF
     if ((rc = setJpegThumbnailSize(params))) final_rc = rc;
@@ -4237,11 +4262,11 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0)
     {
 
-#if SCRITCH_OFF
         // Only signature APL support.
         if (((rc = setExposureCompensation(params)))){
             final_rc = rc;
         }
+#if SCRITCH_OFF
         if (((rc = setAfMode(params)))){
             final_rc = rc;
         }
@@ -6309,6 +6334,7 @@ status_t SemcCameraHardware::setSceneRecognition(const CameraParameters& params,
     LOGD("END setSceneRecognition : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
+#endif //SCRITCH_OFF
 status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& params,
                                               const char *key /* = NULL */,
                                               const char *str_value /* = NULL */,
@@ -6325,7 +6351,7 @@ status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& par
         }
     }else{
         //This root is setParameters(pkg) and setCollective setting
-        str = params.get(CameraParameters::EXPOSURE_COMPENSATION);
+        str = params.get(CameraParameters::KEY_EXPOSURE_COMPENSATION);
     }
     int32_t value = attr_lookup(exposure_compensation, sizeof(exposure_compensation) / sizeof(str_map), str, int_value);
     if(value != NOT_FOUND) {
@@ -6345,9 +6371,9 @@ status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& par
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0) {
             //ParametersClass setting.
             if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
-                mParameters.set(CameraParameters::EXPOSURE_COMPENSATION, str);
+                mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, str);
             }else{
-                mParameters.set(CameraParameters::EXPOSURE_COMPENSATION, int_value);
+                mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, int_value);
             }
         }
         LOGD("END setExposureCompensation : NO_ERROR");
@@ -6357,7 +6383,6 @@ status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& par
     return BAD_VALUE;
 }
 
-#endif //SCRITCH_OFF
 status_t SemcCameraHardware::setFramerate(const CameraParameters& params,
                                               const char *key /* = NULL */,
                                               const char *str_value /* = NULL */,

@@ -57,6 +57,70 @@
 #define CAMERA_8MSIZE_HEIGHT                  2448
 
 
+#define COMPENSATION_M9 "-27"
+#define COMPENSATION_M8 "-24"
+#define COMPENSATION_M7 "-21"
+#define COMPENSATION_M6 "-18"
+#define COMPENSATION_M5 "-15"
+#define COMPENSATION_M4 "-12"
+#define COMPENSATION_M3 "-9"
+#define COMPENSATION_M2 "-6"
+#define COMPENSATION_M1 "-3"
+#define COMPENSATION_ZERO "0"
+#define COMPENSATION_P9 "27"
+#define COMPENSATION_P8 "24"
+#define COMPENSATION_P7 "21"
+#define COMPENSATION_P6 "18"
+#define COMPENSATION_P5 "15"
+#define COMPENSATION_P4 "12"
+#define COMPENSATION_P3 "9"
+#define COMPENSATION_P2 "6"
+#define COMPENSATION_P1 "3"
+
+
+#define CAMERA_EXPOSURE_COMP_M9_3 0xffee0006
+#define CAMERA_EXPOSURE_COMP_M8_3 0xfff00006
+#define CAMERA_EXPOSURE_COMP_M7_3 0xfff20006
+#define CAMERA_EXPOSURE_COMP_M6_3 0xfff40006
+#define CAMERA_EXPOSURE_COMP_M5_3 0xfff60006
+#define CAMERA_EXPOSURE_COMP_M4_3 0xfff80006
+#define CAMERA_EXPOSURE_COMP_M3_3 0xfffa0006
+#define CAMERA_EXPOSURE_COMP_M2_3 0xfffc0006
+#define CAMERA_EXPOSURE_COMP_M1_3 0xfffe0006
+#define CAMERA_EXPOSURE_COMP_ZERO 0x6
+#define CAMERA_EXPOSURE_COMP_P1_3 0x20006
+#define CAMERA_EXPOSURE_COMP_P2_3 0x40006
+#define CAMERA_EXPOSURE_COMP_P3_3 0x60006
+#define CAMERA_EXPOSURE_COMP_P4_3 0x80006
+#define CAMERA_EXPOSURE_COMP_P5_3 0xa0006
+#define CAMERA_EXPOSURE_COMP_P6_3 0xc0006
+#define CAMERA_EXPOSURE_COMP_P7_3 0xe0006
+#define CAMERA_EXPOSURE_COMP_P8_3 0x100006
+#define CAMERA_EXPOSURE_COMP_P9_3 0x120006
+
+
+//#define CAMERA_EXPOSURE_COMP_M9_3 -9 
+//#define CAMERA_EXPOSURE_COMP_M8_3 -8
+//#define CAMERA_EXPOSURE_COMP_M7_3 -7
+//#define CAMERA_EXPOSURE_COMP_M6_3 -6
+//#define CAMERA_EXPOSURE_COMP_M5_3 -5
+//#define CAMERA_EXPOSURE_COMP_M4_3 -4
+//#define CAMERA_EXPOSURE_COMP_M3_3 -3
+//#define CAMERA_EXPOSURE_COMP_M2_3 -2
+//#define CAMERA_EXPOSURE_COMP_M1_3 -1
+//#define CAMERA_EXPOSURE_COMP_ZERO 6
+//#define CAMERA_EXPOSURE_COMP_P1_3 1
+//#define CAMERA_EXPOSURE_COMP_P2_3 2
+//#define CAMERA_EXPOSURE_COMP_P3_3 3
+//#define CAMERA_EXPOSURE_COMP_P4_3 4
+//#define CAMERA_EXPOSURE_COMP_P5_3 5 
+//#define CAMERA_EXPOSURE_COMP_P6_3 6
+//#define CAMERA_EXPOSURE_COMP_P7_3 7
+//#define CAMERA_EXPOSURE_COMP_P8_3 8
+//#define CAMERA_EXPOSURE_COMP_P9_3 9
+
+
+
 //Create some fake defines to please the compiler but never use since we are using an external APP and not Sony one
 
 typedef struct camera_start_auto_focus_t{
@@ -785,8 +849,8 @@ private:
 #if 0
     status_t setSceneRecognition(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
 
-    status_t setExposureCompensation(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
 #endif//0
+    status_t setExposureCompensation(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
     status_t setFramerate(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
     status_t setPreviewMode(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
     status_t setAfMode(const CameraParameters& params, const char *key = NULL , const char *str_value  = NULL , int int_value  = -1 , bool collective = false);
