@@ -49,14 +49,14 @@ extern "C" void destroyAudioPolicyManager(AudioPolicyInterface *interface)
 // ---
 
 
-uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, bool fromCache)
+audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, bool fromCache)
 {
     uint32_t device = 0;
 
     if (fromCache) {
         device = mDeviceForStrategy[strategy];
-        LOGV("getDeviceForStrategy() from cache strategy %d, device %x", strategy, device);
-        return device;
+        ALOGV("getDeviceForStrategy() from cache strategy %d, device %x", strategy, device);
+        return (audio_devices_t)device;
     }
 
     switch (strategy) {
@@ -109,7 +109,7 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
             }
             device = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_EARPIECE;
             if (device == 0) {
-                LOGE("getDeviceForStrategy() earpiece device not found");
+                ALOGE("getDeviceForStrategy() earpiece device not found");
             }
             break;
 
@@ -132,7 +132,7 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
             }
             device = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_SPEAKER;
             if (device == 0) {
-                LOGE("getDeviceForStrategy() speaker device not found");
+                ALOGE("getDeviceForStrategy() speaker device not found");
             }
             break;
         }
@@ -152,7 +152,7 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
         if (mForceUse[AudioSystem::FOR_DOCK] != AudioSystem::FORCE_BT_CAR_DOCK) {
             device = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_SPEAKER;
             if (device == 0) {
-                LOGE("getDeviceForStrategy() speaker device not found");
+                ALOGE("getDeviceForStrategy() speaker device not found");
             }
             if (mForceUse[AudioSystem::FOR_DOCK] == AudioSystem::FORCE_BT_DESK_DOCK) {
                 if (mAvailableOutputDevices & AudioSystem::DEVICE_OUT_WIRED_HEADPHONE) {
@@ -172,7 +172,8 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
     case STRATEGY_MEDIA: {
         uint32_t device2 = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_AUX_DIGITAL;
 #ifdef WITH_A2DP
-        if (mA2dpOutput != 0) {
+        if (mHasA2dp && (mForceUse[AudioSystem::FOR_MEDIA] != AudioSystem::FORCE_NO_BT_A2DP) &&
+                (getA2dpOutput() != 0) && !mA2dpSuspended) {
             if (device2 == 0) {
                 // play ringtone over speaker (or speaker + headset) if in car dock
                 // because A2DP is suspended in this case
@@ -194,7 +195,8 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
             device2 = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_WIRED_HEADSET;
         }
 #ifdef WITH_A2DP
-        if (mA2dpOutput != 0) {
+        if (mHasA2dp && (mForceUse[AudioSystem::FOR_MEDIA] != AudioSystem::FORCE_NO_BT_A2DP) &&
+                (getA2dpOutput() != 0) && !mA2dpSuspended) {
             if (device2 == 0) {
                 device2 = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_BLUETOOTH_A2DP;
             }
@@ -212,7 +214,7 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
         // device is DEVICE_OUT_SPEAKER if we come from case STRATEGY_SONIFICATION, 0 otherwise
         device |= device2;
         if (device == 0) {
-            LOGE("getDeviceForStrategy() speaker device not found");
+            ALOGE("getDeviceForStrategy() speaker device not found");
         }
         // Do not play media stream if in call and the requested device would change the hardware
         // output routing
@@ -220,20 +222,20 @@ uint32_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strategy, boo
             !AudioSystem::isA2dpDevice((AudioSystem::audio_devices)device) &&
             device != getDeviceForStrategy(STRATEGY_PHONE, false)) {
             device = 0;
-            LOGV("getDeviceForStrategy() incompatible media and phone devices");
+            ALOGV("getDeviceForStrategy() incompatible media and phone devices");
         }
         } break;
 
     default:
-        LOGW("getDeviceForStrategy() unknown strategy: %d", strategy);
+        ALOGW("getDeviceForStrategy() unknown strategy: %d", strategy);
         break;
     }
 
-    LOGV("getDeviceForStrategy() strategy %d, device %x", strategy, device);
-    return device;
+    ALOGV("getDeviceForStrategy() strategy %d, device %x", strategy, device);
+    return (audio_devices_t)device;
 }
 
-float AudioPolicyManager::computeVolume(int stream, int index, audio_io_handle_t output, uint32_t device)
+float AudioPolicyManager::computeVolume(int stream, int index, audio_io_handle_t output, audio_devices_t device)
 {
     // if requested volume index is the minimum possible value, we must honor this value as this
     // means the stream is muted. This overrides condition-specific modifications to the volume
@@ -245,7 +247,7 @@ float AudioPolicyManager::computeVolume(int stream, int index, audio_io_handle_t
     // force volume on A2DP output to maximum if playing through car dock speakers
     // as volume is applied on the car dock and controlled via car dock keys.
 #ifdef WITH_A2DP
-    if (output == mA2dpOutput &&
+    if (output == getA2dpOutput() &&
         mForceUse[AudioSystem::FOR_DOCK] == AudioSystem::FORCE_BT_CAR_DOCK) {
         return 1.0;
     }
@@ -257,7 +259,7 @@ float AudioPolicyManager::computeVolume(int stream, int index, audio_io_handle_t
     // avoid saturation
     if (mPhoneState == AudioSystem::MODE_IN_CALL && AudioSystem::isBluetoothScoDevice((AudioSystem::audio_devices)device)) {
         if (volume > IN_CALL_SCO_VOLUME_MAX) {
-            LOGV("computeVolume limiting SYSTEM volume %f to %f",volume, IN_CALL_SCO_VOLUME_MAX);
+            ALOGV("computeVolume limiting SYSTEM volume %f to %f",volume, IN_CALL_SCO_VOLUME_MAX);
             volume = IN_CALL_SCO_VOLUME_MAX;
         }
     }

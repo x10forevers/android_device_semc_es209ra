@@ -19,24 +19,24 @@
 //#define CAMHW_DEBUG
 
 #ifdef CAMHW_DEBUG
-#define LOG_NDEBUG 1
+#define ALOG_NDEBUG 1
 #endif
 
 #define SCRITCH_OFF 0
 
-#define LOG_TAG "SemcCameraHardware"
+#define ALOG_TAG "SemcCameraHardware"
 #include <cutils/log.h>
 #define CAMHW_DEBUG
 
 #ifndef CAMHW_DEBUG
-#undef LOGD
-#undef LOGD
-#undef LOGI
-#undef LOGD
-#define LOGD(...) ((void)0)
-#define LOGD(...) ((void)0)
-#define LOGI(...) ((void)0)
-#define LOGD(...) ((void)0)
+#undef ALOGD
+#undef ALOGD
+#undef ALOGI
+#undef ALOGD
+#define ALOGD(...) ((void)0)
+#define ALOGD(...) ((void)0)
+#define ALOGI(...) ((void)0)
+#define ALOGD(...) ((void)0)
 #endif
 #include "SemcCameraHardware.h"
 
@@ -268,17 +268,17 @@ struct mdp_ccs mdp_ccs_hd={
 
 static int attr_lookup(const str_map arr[], int len, const char *name, int mw_value = -1)
 {
-    LOGD("START attr_lookup name[%s] : mw_value[%d]",name,mw_value);
+    ALOGD("START attr_lookup name[%s] : mw_value[%d]",name,mw_value);
 
     if(strcmp(name, CAMERA_DEFAULT_VALUE) != 0) {
         for (int i = 0; i < len; i++) {
             if (!strcmp(arr[i].desc, name)) {
-                LOGD("END attr_lookup : name case return [%d]",arr[i].val);
+                ALOGD("END attr_lookup : name case return [%d]",arr[i].val);
                 return arr[i].val;
             }
         }
     }
-    LOGD("END attr_lookup return NOT_FOUND");
+    ALOGD("END attr_lookup return NOT_FOUND");
     return NOT_FOUND;
 }
 
@@ -603,13 +603,13 @@ static struct fifo_queue g_busy_frame_queue =
 
 static void cam_frame_wait_video (void)
 {
-    LOGD("START cam_frame_wait_video :");
+    ALOGD("START cam_frame_wait_video :");
 
     if ((g_busy_frame_queue.num_of_frames) <=0){
         pthread_cond_wait(&(g_busy_frame_queue.wait), &(g_busy_frame_queue.mut));
     }
 
-    LOGV("cam_frame_wait_video X");
+    ALOGV("cam_frame_wait_video X");
 
     return;
 }
@@ -621,7 +621,7 @@ static void cam_frame_wait_video (void)
  * ===========================================================================*/
 void cam_frame_flush_video (void)
 {
-    LOGD("START cam_frame_flush_video : in n = %d\n", g_busy_frame_queue.num_of_frames);
+    ALOGD("START cam_frame_flush_video : in n = %d\n", g_busy_frame_queue.num_of_frames);
 
     pthread_mutex_lock(&(g_busy_frame_queue.mut));
 
@@ -632,11 +632,11 @@ void cam_frame_flush_video (void)
        if(node)
            free(node);
 
-       LOGV("cam_frame_flush_video: node \n");
+       ALOGV("cam_frame_flush_video: node \n");
     }
     pthread_mutex_unlock(&(g_busy_frame_queue.mut));
 
-    LOGD("END cam_frame_flush_video: out n = %d\n", g_busy_frame_queue.num_of_frames);
+    ALOGD("END cam_frame_flush_video: out n = %d\n", g_busy_frame_queue.num_of_frames);
 
     return ;
 }
@@ -648,8 +648,8 @@ void cam_frame_flush_video (void)
 static struct msm_frame * cam_frame_get_video()
 {
     struct msm_frame *p = NULL;
-    LOGV("cam_frame_get_video... in\n");
-    LOGV("cam_frame_get_video... got lock\n");
+    ALOGV("cam_frame_get_video... in\n");
+    ALOGV("cam_frame_get_video... got lock\n");
     if (g_busy_frame_queue.front)
     {
         //dequeue
@@ -659,7 +659,7 @@ static struct msm_frame * cam_frame_get_video()
            p = (struct msm_frame *)node->f;
            free (node);
        }
-       LOGV("cam_frame_get_video... out = %x\n", p->buffer);
+       ALOGV("cam_frame_get_video... out = %x\n", p->buffer);
     }
     return p;
 }
@@ -673,31 +673,31 @@ static void cam_frame_post_video (struct msm_frame *p)
 {
     if (!p)
     {
-        LOGE("post video , buffer is null");
+        ALOGE("post video , buffer is null");
         return;
     }
-    LOGV("cam_frame_post_video... in = %x\n", (unsigned int)(p->buffer));
+    ALOGV("cam_frame_post_video... in = %x\n", (unsigned int)(p->buffer));
     pthread_mutex_lock(&(g_busy_frame_queue.mut));
-    LOGV("post_video got lock. q count before enQ %d", g_busy_frame_queue.num_of_frames);
+    ALOGV("post_video got lock. q count before enQ %d", g_busy_frame_queue.num_of_frames);
     //enqueue to busy queue
     struct fifo_node *node = (struct fifo_node *)malloc (sizeof (struct fifo_node));
     if (node)
     {
-        LOGV(" post video , enqueing in busy queue");
+        ALOGV(" post video , enqueing in busy queue");
         node->f = p;
         node->next = NULL;
         enqueue (&g_busy_frame_queue, node);
-        LOGV("post_video got lock. q count after enQ %d", g_busy_frame_queue.num_of_frames);
+        ALOGV("post_video got lock. q count after enQ %d", g_busy_frame_queue.num_of_frames);
     }
     else
     {
-        LOGE("cam_frame_post_video error... out of memory\n");
+        ALOGE("cam_frame_post_video error... out of memory\n");
     }
 
     pthread_mutex_unlock(&(g_busy_frame_queue.mut));
     pthread_cond_signal(&(g_busy_frame_queue.wait));
 
-    LOGV("cam_frame_post_video... out = %x\n", p->buffer);
+    ALOGV("cam_frame_post_video... out = %x\n", p->buffer);
 
     return;
 }
@@ -807,14 +807,14 @@ SemcCameraHardware::SemcCameraHardware()
      ,mCameraExitFlag(false)
      ,mEncoderThreadInfo(0)
 {
-    LOGD("START SemcCameraHardware::constructor");
+    ALOGD("START SemcCameraHardware::constructor");
 
     // Start opening camera device in a separate thread/ Since this
     // initializes the sensor hardware, this can take a long time. So,
     // start the process here so it will be ready by the time it's
     // needed.
     if ((pthread_create(&w_thread, NULL, opencamerafd, NULL)) != 0) {
-        LOGE("Camera open thread creation failed");
+        ALOGE("Camera open thread creation failed");
     }
 
     memset(&mDimension, 0, sizeof(mDimension));
@@ -858,7 +858,7 @@ SemcCameraHardware::SemcCameraHardware()
     memset(&mAntibanding, NULL, CAMERA_STRING_VALUE_MAXLEN);
     memset(&mEffect, NULL, CAMERA_STRING_VALUE_MAXLEN);
 
-    LOGD("END SemcCameraHardware::constructor");
+    ALOGD("END SemcCameraHardware::constructor");
 
 }
 
@@ -905,7 +905,7 @@ void SemcCameraHardware::filterPictureSizes(){
 
 void SemcCameraHardware::initDefaultParameters()
 {
-    LOGD("START initDefaultParameters");
+    ALOGD("START initDefaultParameters");
 
     // Initialize constant parameter strings. This will happen only once in the
     // lifetime of the mediaserver process.
@@ -1040,7 +1040,7 @@ void SemcCameraHardware::initDefaultParameters()
     int maxZoom;
     native_get_maxzoom(mCameraControlFd, &maxZoom);
 
-    LOGD("%s FOUND mAX ZOOM %d", __FUNCTION__, maxZoom);
+    ALOGD("%s FOUND mAX ZOOM %d", __FUNCTION__, maxZoom);
 
     mUseOverlay = useOverlay();
 
@@ -1049,7 +1049,7 @@ void SemcCameraHardware::initDefaultParameters()
     camframe_timeout_flag = false;
     mPostViewHeap = NULL;
 
-    LOGD("END initDefaultParameters");
+    ALOGD("END initDefaultParameters");
 
 }
 
@@ -1081,26 +1081,26 @@ static bool native_get_scene_nv(int camfd, void *pBuffer, int size);
 
 bool SemcCameraHardware::startCamera()
 {
-    LOGD("START startCamera");
+    ALOGD("START startCamera");
 #ifdef CAMERA_FIRMWARE_UPDATE
     int file_fd = -1;
 #endif //CAMERA_FIRMWARE_UPDATE
 
     if( mCurrentTarget == TARGET_MAX ) {
-        LOGE(" Unable to determine the target type. Camera will not work ");
+        ALOGE(" Unable to determine the target type. Camera will not work ");
         return false;
     }
 #if DLOPEN_LIBMMCAMERA
     libmmcamera = ::dlopen("liboemcamera.so", RTLD_NOW);
-    LOGV("loading liboemcamera at %p", libmmcamera);
+    ALOGV("loading liboemcamera at %p", libmmcamera);
     if (!libmmcamera) {
-        LOGE("FATAL ERROR: could not dlopen liboemcamera.so: %s", dlerror());
+        ALOGE("FATAL ERROR: could not dlopen liboemcamera.so: %s", dlerror());
         return false;
     }
 
     libmmipl = ::dlopen("libmmipl.so", RTLD_NOW);
     if (!libmmipl) {
-        LOGE("startCamera FATAL ERROR: could not dlopen libmmipl.so: %s", dlerror());
+        ALOGE("startCamera FATAL ERROR: could not dlopen libmmipl.so: %s", dlerror());
         goto errlibmmcamera;
     }
 
@@ -1213,7 +1213,7 @@ bool SemcCameraHardware::startCamera()
 
     file_fd = open("/sdcard/camfirm.bin", O_RDONLY);
     if(file_fd != -1) {
-        LOGE("Firmware binary file was detected.");
+        ALOGE("Firmware binary file was detected.");
         LINK_sensor_set_firmware_fd(file_fd);
     }
 #endif //CAMERA_FIRMWARE_UPDATE
@@ -1227,13 +1227,13 @@ bool SemcCameraHardware::startCamera()
 
     /* The control thread is in libcamera itself. */
     if (pthread_join(w_thread, NULL) != 0) {
-        LOGE("Camera open thread exit failed");
+        ALOGE("Camera open thread exit failed");
         goto errfirmware;
     }
     mCameraControlFd = camerafd;
 
     if (mCameraControlFd < 0) {
-        LOGE("startCamera X: %s open failed: %s!",
+        ALOGE("startCamera X: %s open failed: %s!",
              MSM_CAMERA_CONTROL,
              strerror(errno));
         goto errfirmware;
@@ -1242,13 +1242,13 @@ bool SemcCameraHardware::startCamera()
     if( mCurrentTarget != TARGET_MSM7630 ){
         fb_fd = open("/dev/graphics/fb0", O_RDWR);
         if (fb_fd < 0) {
-            LOGE("startCamera: fb0 open failed: %s!", strerror(errno));
+            ALOGE("startCamera: fb0 open failed: %s!", strerror(errno));
             goto errcontrol;
         }
         mdp_ccs_save.direction = MDP_CCS_YUV2RGB;
         int ioctlRetVal = true;
         if((ioctlRetVal = ioctl(fb_fd, MSMFB_GET_CCS_MATRIX, &mdp_ccs_save)) < 0) {
-            LOGE("startCamera : MSMFB_GET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+            ALOGE("startCamera : MSMFB_GET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ioctlRetVal);
             mdp_ccs_save.direction = -1;
         }
     }
@@ -1258,32 +1258,32 @@ bool SemcCameraHardware::startCamera()
      */
 
     if (LINK_launch_cam_conf_thread()) {
-        LOGE("failed to launch the camera config thread");
+        ALOGE("failed to launch the camera config thread");
         goto errall;
     }
     /*if (!scene_nv_data_initialized) {
         memset(&scene_nv_data, 0, sizeof(scene_nv_data));
         if(native_get_scene_nv(mCameraControlFd, scene_nv_data, sizeof(scene_nv_data)) == false) {
-            LOGE("%s: native_get_scene_nv is error.", __FUNCTION__);
+            ALOGE("%s: native_get_scene_nv is error.", __FUNCTION__);
             goto errall;
         }
         scene_nv_data_initialized = true;
-        LOGD("%s: scene_nv_data is initialized", __FUNCTION__);
+        ALOGD("%s: scene_nv_data is initialized", __FUNCTION__);
     }*/
 
     memset(&mSensorInfo, 0, sizeof(mSensorInfo));
     if (ioctl(mCameraControlFd,
               MSM_CAM_IOCTL_GET_SENSOR_INFO,
               &mSensorInfo) < 0){
-        LOGW("%s: cannot retrieve sensor info!", __FUNCTION__);
+        ALOGW("%s: cannot retrieve sensor info!", __FUNCTION__);
     } else {
-        LOGI("%s: camsensor name %s, flash %d", __FUNCTION__,
+        ALOGI("%s: camsensor name %s, flash %d", __FUNCTION__,
              mSensorInfo.name, mSensorInfo.flash_enabled);
     }
 /* Disabling until support is available.
     picture_sizes = LINK_default_sensor_get_snapshot_sizes(&PICTURE_SIZE_COUNT);
     if (!picture_sizes || !PICTURE_SIZE_COUNT) {
-        LOGE("startCamera X: could not get snapshot sizes");
+        ALOGE("startCamera X: could not get snapshot sizes");
         return false;
     }
 */
@@ -1292,7 +1292,7 @@ bool SemcCameraHardware::startCamera()
 
 #ifdef CAMERA_FIRMWARE_UPDATE
     if(file_fd != -1) {
-        LOGE("extended sleep for firmware update.");
+        ALOGE("extended sleep for firmware update.");
         // 2. I extend sleep time when there was a file.
         usleep(300*1000*1000);
         // 3. I acquire firmware update upshot from device driver.
@@ -1300,14 +1300,14 @@ bool SemcCameraHardware::startCamera()
         int result;
         result = LINK_sensor_get_firmware_update_result();
         while(SENSOR_FIRMWARE_UPDATE_RESULT_INVALID == result) {
-            LOGE("still firmware update processing...");
+            ALOGE("still firmware update processing...");
             usleep(30*1000*1000);
             result = LINK_sensor_get_firmware_update_result();
         }
         if(!result) {
-            LOGE("The camera firmware update succeeded : result = %d ",result);
+            ALOGE("The camera firmware update succeeded : result = %d ",result);
         } else {
-            LOGE("The camera firmware update failed : result = %d ",result);
+            ALOGE("The camera firmware update failed : result = %d ",result);
         }
         // 5. Close the file descriptor.
         /*close(file_fd);*/
@@ -1318,25 +1318,25 @@ bool SemcCameraHardware::startCamera()
     }
 #endif //CAMERA_FIRMWARE_UPDATE
 
-    LOGD("END startCamera : mStateCameraHal = %d", mStateCameraHal);
+    ALOGD("END startCamera : mStateCameraHal = %d", mStateCameraHal);
 
     return true;
 errall:
     if(fb_fd > -1) {
-        LOGE("close frame buffer.");
+        ALOGE("close frame buffer.");
         close(fb_fd);
         fb_fd = -1;
     }
 errcontrol:
     if(mCameraControlFd > -1) {
-        LOGE("close camera control.");
+        ALOGE("close camera control.");
         close(mCameraControlFd);
         mCameraControlFd = -1;
     }
 errfirmware:
 #ifdef CAMERA_FIRMWARE_UPDATE
     if(file_fd > -1) {
-        LOGE("close firmware binary file.");
+        ALOGE("close firmware binary file.");
         close(file_fd);
         file_fd = -1;
     }
@@ -1344,13 +1344,13 @@ errfirmware:
 errlibmmipl:
     if(libmmipl) {
         unsigned ref_ipl = ::dlclose(libmmipl);
-        LOGE("startCamera : dlclose(libmmipl) refcount %d", ref_ipl);
+        ALOGE("startCamera : dlclose(libmmipl) refcount %d", ref_ipl);
         libmmipl = NULL;
     }
 errlibmmcamera:
     if(libmmcamera) {
         unsigned ref = ::dlclose(libmmcamera);
-        LOGE("startCamera : dlclose(libmmcamera) refcount %d", ref);
+        ALOGE("startCamera : dlclose(libmmcamera) refcount %d", ref);
         libmmcamera = NULL;
     }
     return false;
@@ -1400,7 +1400,7 @@ status_t SemcCameraHardware::dump(int fd,
 
 static bool native_get_maxzoom(int camfd, void *pZm)
 {
-    LOGV("native_get_maxzoom E");
+    ALOGV("native_get_maxzoom E");
 
     struct msm_ctrl_cmd ctrlCmd;
     int32_t *pZoom = (int32_t *)pZm;
@@ -1412,15 +1412,15 @@ static bool native_get_maxzoom(int camfd, void *pZm)
     ctrlCmd.resp_fd    = camfd;
 
     if (ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
-        LOGE("native_get_maxzoom: ioctl fd %d error %s",
+        ALOGE("native_get_maxzoom: ioctl fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
-    LOGD("ctrlCmd.value = %d", *(int32_t *)ctrlCmd.value);
+    ALOGD("ctrlCmd.value = %d", *(int32_t *)ctrlCmd.value);
     memcpy(pZoom, (int32_t *)ctrlCmd.value, sizeof(int32_t));
 
-    LOGV("native_get_maxzoom X");
+    ALOGV("native_get_maxzoom X");
     return true;
 }
 
@@ -1436,11 +1436,11 @@ static bool native_set_afmode(int camfd, isp3a_af_mode_t af_type)
     ctrlCmd.resp_fd = camfd; // FIXME: this will be put in by the kernel
 
     if ((rc = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0)
-        LOGE("native_set_afmode: ioctl fd %d error %s\n",
+        ALOGE("native_set_afmode: ioctl fd %d error %s\n",
              camfd,
              strerror(errno));
 
-    LOGV("native_set_afmode: ctrlCmd.status == %d\n", ctrlCmd.status);
+    ALOGV("native_set_afmode: ctrlCmd.status == %d\n", ctrlCmd.status);
     return rc >= 0 && ctrlCmd.status == CAMERA_EXIT_CB_DONE;
 }
 
@@ -1457,7 +1457,7 @@ static bool native_cancel_afmode(int camfd)
 
     if ((rc = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND_2, &ctrlCmd)) < 0)
     {
-        LOGE("native_cancel_afmode: ioctl fd %d error %s\n",
+        ALOGE("native_cancel_afmode: ioctl fd %d error %s\n",
              camfd,
              strerror(errno));
         return false;
@@ -1468,7 +1468,7 @@ static bool native_cancel_afmode(int camfd)
 
 static bool native_start_preview(int camfd)
 {
-    LOGD("START native_start_preview");
+    ALOGD("START native_start_preview");
 
     struct msm_ctrl_cmd ctrlCmd;
 
@@ -1478,20 +1478,20 @@ static bool native_start_preview(int camfd)
     ctrlCmd.resp_fd    = camfd; // FIXME: this will be put in by the kernel
 
     if (ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
-        LOGE("native_start_preview: MSM_CAM_IOCTL_CTRL_COMMAND fd %d error %s",
+        ALOGE("native_start_preview: MSM_CAM_IOCTL_CTRL_COMMAND fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
 
-    LOGD("END native_start_preview");
+    ALOGD("END native_start_preview");
 
     return true;
 }
 
 static bool native_get_picture (int camfd, common_crop_t *crop)
 {
-    LOGD("START native_get_picture");
+    ALOGD("START native_get_picture");
 
     struct msm_ctrl_cmd ctrlCmd;
 
@@ -1500,20 +1500,20 @@ static bool native_get_picture (int camfd, common_crop_t *crop)
     ctrlCmd.value      = crop;
 
     if(ioctl(camfd, MSM_CAM_IOCTL_GET_PICTURE, &ctrlCmd) < 0) {
-        LOGE("native_get_picture: MSM_CAM_IOCTL_GET_PICTURE fd %d error %s",
+        ALOGE("native_get_picture: MSM_CAM_IOCTL_GET_PICTURE fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
 
-    LOGD("END native_get_picture");
+    ALOGD("END native_get_picture");
 
     return true;
 }
 
 static bool native_stop_preview(int camfd)
 {
-    LOGD("START native_stop_preview");
+    ALOGD("START native_stop_preview");
 
     struct msm_ctrl_cmd ctrlCmd;
     ctrlCmd.timeout_ms = 5000;
@@ -1522,13 +1522,13 @@ static bool native_stop_preview(int camfd)
     ctrlCmd.resp_fd    = camfd; // FIXME: this will be put in by the kernel
 
     if(ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
-        LOGE("native_stop_preview: ioctl fd %d error %s",
+        ALOGE("native_stop_preview: ioctl fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
 
-    LOGD("END native_stop_preview");
+    ALOGD("END native_stop_preview");
 
     return true;
 }
@@ -1547,7 +1547,7 @@ write_int(char const* path, int value)
         return amt == -1 ? -errno : 0;
     } else {
         if (already_warned == 0) {
-            LOGE("write_int failed to open %s\n", path);
+            ALOGE("write_int failed to open %s\n", path);
             already_warned = 1;
         }
         return -errno;
@@ -1571,7 +1571,7 @@ setSocTorchMode(bool enable)
 
 static bool native_prepare_snapshot(int camfd, const CameraParameters& params)
 {
-    LOGD("START native_prepare_snapshot");
+    ALOGD("START native_prepare_snapshot");
 
     int ioctlRetVal = true;
     struct msm_ctrl_cmd ctrlCmd;
@@ -1585,7 +1585,7 @@ static bool native_prepare_snapshot(int camfd, const CameraParameters& params)
     const char *str = params.get(CameraParameters::KEY_FLASH_MODE);
 
 
-    LOGD("%s, Flash Value %s", __FUNCTION__, str);
+    ALOGD("%s, Flash Value %s", __FUNCTION__, str);
 
     if (str != NULL) {
        int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
@@ -1598,13 +1598,13 @@ static bool native_prepare_snapshot(int camfd, const CameraParameters& params)
 
 
     if (ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
-        LOGE("native_prepare_snapshot: ioctl fd %d error %s",
+        ALOGE("native_prepare_snapshot: ioctl fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
 
-    LOGD("END native_prepare_snapshot");
+    ALOGD("END native_prepare_snapshot");
 
     return true;
 }
@@ -1612,7 +1612,7 @@ static bool native_prepare_snapshot(int camfd, const CameraParameters& params)
 
 static bool native_start_snapshot(int camfd)
 {
-    LOGD("START native_start_snapshot");
+    ALOGD("START native_start_snapshot");
 
     struct msm_ctrl_cmd ctrlCmd;
 
@@ -1623,20 +1623,20 @@ static bool native_start_snapshot(int camfd)
 
 
     if(ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0) {
-        LOGE("native_start_snapshot: ioctl fd %d error %s",
+        ALOGE("native_start_snapshot: ioctl fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
 
-    LOGD("END native_start_snapshot");
+    ALOGD("END native_start_snapshot");
 
     return true;
 }
 
 static bool native_start_raw_snapshot(int camfd)
 {
-    LOGD("START native_start_raw_snapshot");
+    ALOGD("START native_start_raw_snapshot");
 
     int ret;
     struct msm_ctrl_cmd ctrlCmd;
@@ -1648,12 +1648,12 @@ static bool native_start_raw_snapshot(int camfd)
     ctrlCmd.resp_fd = camfd;
 
     if ((ret = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_start_raw_snapshot: ioctl failed. ioctl return value "\
+        ALOGE("native_start_raw_snapshot: ioctl failed. ioctl return value "\
              "is %d \n", ret);
         return false;
     }
 
-    LOGD("END native_start_raw_snapshot");
+    ALOGD("END native_start_raw_snapshot");
 
     return true;
 }
@@ -1661,7 +1661,7 @@ static bool native_start_raw_snapshot(int camfd)
 
 static bool native_stop_snapshot (int camfd)
 {
-    LOGD("START native_stop_snapshot");
+    ALOGD("START native_stop_snapshot");
 
     struct msm_ctrl_cmd ctrlCmd;
 
@@ -1674,13 +1674,13 @@ static bool native_stop_snapshot (int camfd)
     setSocTorchMode(0);
 
     if (ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND_2, &ctrlCmd) < 0) {
-        LOGE("native_stop_snapshot: ioctl fd %d error %s",
+        ALOGE("native_stop_snapshot: ioctl fd %d error %s",
              camfd,
              strerror(errno));
         return false;
     }
 
-    LOGD("END native_stop_snapshot");
+    ALOGD("END native_stop_snapshot");
 
     return true;
 }
@@ -1691,7 +1691,7 @@ static bool native_stop_snapshot (int camfd)
  *==========================================================================*/
 static bool native_start_recording(int camfd)
 {
-    LOGD("START native_start_recording");
+    ALOGD("START native_start_recording");
 
     int ret;
     struct msm_ctrl_cmd ctrlCmd;
@@ -1703,17 +1703,17 @@ static bool native_start_recording(int camfd)
     ctrlCmd.resp_fd = camfd;
 
     if ((ret = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_start_recording: ioctl failed. ioctl return value "\
+        ALOGE("native_start_recording: ioctl failed. ioctl return value "\
             "is %d \n", ret);
         return false;
     }
-    LOGV("native_start_recording: ioctl good. ioctl return value is %d \n",ret);
+    ALOGV("native_start_recording: ioctl good. ioctl return value is %d \n",ret);
 
   /* TODO: Check status of postprocessing if there is any,
    *       PP status should be in  ctrlCmd */
 
 
-    LOGD("END native_start_recording");
+    ALOGD("END native_start_recording");
 
     return true;
 }
@@ -1725,7 +1725,7 @@ static bool native_start_recording(int camfd)
  *==========================================================================*/
 static bool native_stop_recording(int camfd)
 {
-    LOGD("START native_stop_recording");
+    ALOGD("START native_stop_recording");
 
     int ret;
     struct msm_ctrl_cmd ctrlCmd;
@@ -1737,12 +1737,12 @@ static bool native_stop_recording(int camfd)
     ctrlCmd.resp_fd = camfd;
 
     if ((ret = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_stop_recording: ioctl failed. ioctl return value is %d \n",
+        ALOGE("native_stop_recording: ioctl failed. ioctl return value is %d \n",
         ret);
         return false;
     }
 
-    LOGD("END native_stop_recording returned %d", ret);
+    ALOGD("END native_stop_recording returned %d", ret);
 
     return true;
 }
@@ -1753,7 +1753,7 @@ static bool native_stop_recording(int camfd)
  *==========================================================================*/
 static bool native_start_video(int camfd)
 {
-    LOGD("START native_start_video");
+    ALOGD("START native_start_video");
 
     int ret;
     struct msm_ctrl_cmd ctrlCmd;
@@ -1765,7 +1765,7 @@ static bool native_start_video(int camfd)
     ctrlCmd.resp_fd = camfd;
 
     if ((ret = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_start_video: ioctl failed. ioctl return value is %d \n",
+        ALOGE("native_start_video: ioctl failed. ioctl return value is %d \n",
         ret);
         return false;
     }
@@ -1773,7 +1773,7 @@ static bool native_start_video(int camfd)
   /* TODO: Check status of postprocessing if there is any,
    *       PP status should be in  ctrlCmd */
 
-    LOGD("END native_start_video");
+    ALOGD("END native_start_video");
 
     return true;
 }
@@ -1785,7 +1785,7 @@ static bool native_start_video(int camfd)
  *==========================================================================*/
 static bool native_stop_video(int camfd)
 {
-    LOGD("START native_stop_video");
+    ALOGD("START native_stop_video");
 
     int ret;
     struct msm_ctrl_cmd ctrlCmd;
@@ -1798,17 +1798,17 @@ static bool native_stop_video(int camfd)
     
     if(MDP_CCS_YUV2RGB == mdp_ccs_save.direction){
         if((ret = ioctl(fb_fd, MSMFB_SET_CCS_MATRIX, &mdp_ccs_save)) < 0) {
-            LOGW("native_stop_video : MSMFB_SET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ret);
+            ALOGW("native_stop_video : MSMFB_SET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ret);
         }
     }
 
     if ((ret = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_stop_video: ioctl failed. ioctl return value is %d \n",
+        ALOGE("native_stop_video: ioctl failed. ioctl return value is %d \n",
         ret);
         return false;
     }
 
-    LOGD("END native_stop_video");
+    ALOGD("END native_stop_video");
 
     return true;
 }
@@ -1825,7 +1825,7 @@ static bool native_stop_video(int camfd)
  */
 static bool native_sync_raw_snapshot_interval (int camfd)
 {
-    LOGD("START native_sync_raw_snapshot_interval");
+    ALOGD("START native_sync_raw_snapshot_interval");
     struct msm_ctrl_cmd ctrlCmd;
     int ioctlRetVal     = true;
 
@@ -1836,12 +1836,12 @@ static bool native_sync_raw_snapshot_interval (int camfd)
     ctrlCmd.resp_fd     = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_sync_raw_snapshot_interval: CAMERA_SYNC_RAW_SNAPSHOT_INTERVAL failed... ioctl "\
+        ALOGE("native_sync_raw_snapshot_interval: CAMERA_SYNC_RAW_SNAPSHOT_INTERVAL failed... ioctl "\
              "return value is %d \n", ioctlRetVal);
         return false;
     }
 
-    LOGD("END native_sync_raw_snapshot_interval :ioctlRetVal[%d]", ioctlRetVal);
+    ALOGD("END native_sync_raw_snapshot_interval :ioctlRetVal[%d]", ioctlRetVal);
     return true;
 }
 
@@ -1856,7 +1856,7 @@ static bool native_sync_raw_snapshot_interval (int camfd)
  */
 static bool native_start_autofocus (int camfd, bool ae_lock, bool awb_lock, bool focus_lock)
 {
-    LOGD("START native_start_autofocus : ae_lock =%d ,awb_lock = %d ,focus_lock = %d", ae_lock, awb_lock, focus_lock);
+    ALOGD("START native_start_autofocus : ae_lock =%d ,awb_lock = %d ,focus_lock = %d", ae_lock, awb_lock, focus_lock);
     int ioctlRetVal;
     struct msm_ctrl_cmd ctrlCmd;
     camera_start_auto_focus_t focustype;
@@ -1886,10 +1886,10 @@ static bool native_start_autofocus (int camfd, bool ae_lock, bool awb_lock, bool
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_start_autofocus: ioctl failed. ioctl return value is %d \n", ioctlRetVal);
+        ALOGE("native_start_autofocus: ioctl failed. ioctl return value is %d \n", ioctlRetVal);
         return false;
     }
-    LOGD("END native_start_autofocus");
+    ALOGD("END native_start_autofocus");
     return true;
 }
 /**
@@ -1903,7 +1903,7 @@ static bool native_start_autofocus (int camfd, bool ae_lock, bool awb_lock, bool
  */
 static bool native_stop_autofocus (int camfd)
 {
-    LOGD("START native_stop_autofocus");
+    ALOGD("START native_stop_autofocus");
     int ioctlRetVal;
     struct msm_ctrl_cmd ctrlCmd;
 
@@ -1914,10 +1914,10 @@ static bool native_stop_autofocus (int camfd)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_stop_autofocus: ioctl failed. ioctl return value is %d \n", ioctlRetVal);
+        ALOGE("native_stop_autofocus: ioctl failed. ioctl return value is %d \n", ioctlRetVal);
         return false;
     }
-    LOGD("END native_stop_autofocus");
+    ALOGD("END native_stop_autofocus");
     return true;
 }
 /**
@@ -1932,7 +1932,7 @@ static bool native_stop_autofocus (int camfd)
  */
 static bool native_start_autozoom(int camfd, int value)
 {
-    LOGD("START native_start_autozoom : value = %d" ,value);
+    ALOGD("START native_start_autozoom : value = %d" ,value);
 
     int     ioctlRetVal;
     struct  msm_ctrl_cmd ctrlCmd;
@@ -1945,10 +1945,10 @@ static bool native_start_autozoom(int camfd, int value)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_start_autozoom: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_start_autozoom: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
-    LOGD("END native_start_autozoom");
+    ALOGD("END native_start_autozoom");
     return true;
 }
 
@@ -1963,7 +1963,7 @@ static bool native_start_autozoom(int camfd, int value)
  */
 static bool native_stop_autozoom(int camfd)
 {
-    LOGD("START native_stop_autozoom");
+    ALOGD("START native_stop_autozoom");
     int     ioctlRetVal;
     struct  msm_ctrl_cmd ctrlCmd;
 
@@ -1974,10 +1974,10 @@ static bool native_stop_autozoom(int camfd)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_stop_autozoom: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_stop_autozoom: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
-    LOGD("END native_stop_autozoom");
+    ALOGD("END native_stop_autozoom");
     return true;
 }
 
@@ -1994,7 +1994,7 @@ static bool native_stop_autozoom(int camfd)
  */
 static bool native_step_zoom(int camfd, int value)
 {
-    LOGD("START native_step_zoom : value = %d" ,value);
+    ALOGD("START native_step_zoom : value = %d" ,value);
     int     ioctlRetVal;
     struct  msm_ctrl_cmd ctrlCmd;
     int     driver_zoom_value = value -1;
@@ -2006,11 +2006,11 @@ static bool native_step_zoom(int camfd, int value)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_step_zoom: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_step_zoom: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
 
-    LOGD("END native_step_zoom");
+    ALOGD("END native_step_zoom");
     return true;
 }
 
@@ -2029,7 +2029,7 @@ static bool native_step_zoom(int camfd, int value)
  */
 static bool native_set_ae_awb_lock(int camfd, bool ae_lock, bool awb_lock)
 {
-    LOGD("START native_set_ae_awb_lock");
+    ALOGD("START native_set_ae_awb_lock");
     struct msm_ctrl_cmd  ctrlCmd;
     camera_ae_awb_lock_t camera_ae_awb_lock;
     int ioctlRetVal     = true;
@@ -2053,12 +2053,12 @@ static bool native_set_ae_awb_lock(int camfd, bool ae_lock, bool awb_lock)
     ctrlCmd.resp_fd     = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_set_ae_awb_lock: ioctl failed. ioctl return value is"\
+        ALOGE("native_set_ae_awb_lock: ioctl failed. ioctl return value is"\
              "%d \n", ioctlRetVal);
         return false;
     }
 
-    LOGD("END native_set_ae_awb_lock");
+    ALOGD("END native_set_ae_awb_lock");
     return true;
 }
 #if SCRITCH_OFF
@@ -2074,7 +2074,7 @@ static bool native_set_ae_awb_lock(int camfd, bool ae_lock, bool awb_lock)
  */
 static bool native_get_firmware_version(int camfd, struct get_versions_t *hal_get_versions)
 {
-    LOGD("START native_get_firmware_version");
+    ALOGD("START native_get_firmware_version");
     int    ioctlRetVal;
     struct msm_ctrl_cmd ctrlCmd;
     camera_get_versions_t camera_get_versions;
@@ -2086,13 +2086,13 @@ static bool native_get_firmware_version(int camfd, struct get_versions_t *hal_ge
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("END native_get_firmware_version: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("END native_get_firmware_version: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
 
     memcpy(hal_get_versions,&camera_get_versions,sizeof(camera_get_versions_t));
 
-    LOGD("END native_get_firmware_version:firmware_version = %s", hal_get_versions->firmware);
+    ALOGD("END native_get_firmware_version:firmware_version = %s", hal_get_versions->firmware);
 
     return true;
 }
@@ -2109,7 +2109,7 @@ static bool native_get_firmware_version(int camfd, struct get_versions_t *hal_ge
  */
 static bool native_set_aeaf_position(int camfd, setAeAfPosition_t position, int face_cnt)
 {
-    LOGD("START native_set_aeaf_position");
+    ALOGD("START native_set_aeaf_position");
     int     ioctlRetVal;
     struct  msm_ctrl_cmd ctrlCmd;
     camera_focus_window_rectangles_type focus_rect_type;
@@ -2129,10 +2129,10 @@ static bool native_set_aeaf_position(int camfd, setAeAfPosition_t position, int 
     ctrlCmd.value      = (void *)&focus_rect_type;
     ctrlCmd.resp_fd    = camfd;
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_set_aeaf_position: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_set_aeaf_position: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
-    LOGD("END native_set_aeaf_position");
+    ALOGD("END native_set_aeaf_position");
     return true;
 }
 
@@ -2150,7 +2150,7 @@ static bool native_set_aeaf_position(int camfd, setAeAfPosition_t position, int 
  */
 static bool native_get_scene_nv(int camfd, void *pBuffer, int size)
 {
-    LOGD("START native_get_scene_nv");
+    ALOGD("START native_get_scene_nv");
     int     ioctlRetVal;
     struct  msm_ctrl_cmd ctrlCmd;
     struct  camera_nv_data_t nv_data_type;
@@ -2166,10 +2166,10 @@ static bool native_get_scene_nv(int camfd, void *pBuffer, int size)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_get_scene_nv: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_get_scene_nv: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
-    LOGD("END native_get_scene_nv");
+    ALOGD("END native_get_scene_nv");
     return true;
 }
 
@@ -2184,7 +2184,7 @@ static bool native_get_scene_nv(int camfd, void *pBuffer, int size)
  */
 bool SemcCameraHardware::native_get_jpegfilesize(int camfd)
 {
-    LOGD("START native_get_jpegfilesize");
+    ALOGD("START native_get_jpegfilesize");
     int    ioctlRetVal;
     struct msm_ctrl_cmd ctrlCmd;
     int32_t jpegsize;
@@ -2196,12 +2196,12 @@ bool SemcCameraHardware::native_get_jpegfilesize(int camfd)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("END native_set_af_antibanding: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("END native_set_af_antibanding: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
 
     mJpegSize = (uint32_t)jpegsize;
-    LOGD("END native_get_jpegfilesize:mJpegSize = %d,jpegsize = %d",mJpegSize,jpegsize);
+    ALOGD("END native_get_jpegfilesize:mJpegSize = %d,jpegsize = %d",mJpegSize,jpegsize);
     return true;
 }
 
@@ -2228,7 +2228,7 @@ typedef struct camera_jpeg_quality_t{
 
 static bool native_set_jpegquality(int camfd, jpeg_quality_t *qsize)
 {
-    LOGD("START native_set_jpegquality");
+    ALOGD("START native_set_jpegquality");
     int ioctlRetVal;//, i = 0;
     struct msm_ctrl_cmd ctrlCmd;
     camera_jpeg_quality_t qtype;
@@ -2237,9 +2237,9 @@ static bool native_set_jpegquality(int camfd, jpeg_quality_t *qsize)
     qtype.camera_jpeg_quality_ave = qsize->quality_ave;
     qtype.camera_jpeg_quality_max = qsize->quality_max;
 
-    LOGV("native_set_jpegquality : quality_min = %d",qtype.camera_jpeg_quality_min);
-    LOGV("native_set_jpegquality : quality_ave = %d",qtype.camera_jpeg_quality_ave);
-    LOGV("native_set_jpegquality : quality_max = %d",qtype.camera_jpeg_quality_max);
+    ALOGV("native_set_jpegquality : quality_min = %d",qtype.camera_jpeg_quality_min);
+    ALOGV("native_set_jpegquality : quality_ave = %d",qtype.camera_jpeg_quality_ave);
+    ALOGV("native_set_jpegquality : quality_max = %d",qtype.camera_jpeg_quality_max);
 
 
     ctrlCmd.timeout_ms = DRV_TIMEOUT_5K;
@@ -2249,10 +2249,10 @@ static bool native_set_jpegquality(int camfd, jpeg_quality_t *qsize)
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0) {
-        LOGE("native_set_jpegquality: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_set_jpegquality: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
-    LOGD("END native_set_jpegquality");
+    ALOGD("END native_set_jpegquality");
     return true;
 }
 
@@ -2269,7 +2269,7 @@ static bool native_set_jpegquality(int camfd, jpeg_quality_t *qsize)
  */
 static bool native_get_capture_setting(int camfd ,struct capture_setting_t *hal_capture_setting)
 {
-    LOGD("START native_get_capture_setting");
+    ALOGD("START native_get_capture_setting");
 
     int ioctlRetVal;
     struct msm_ctrl_cmd ctrlCmd;
@@ -2282,13 +2282,13 @@ static bool native_get_capture_setting(int camfd ,struct capture_setting_t *hal_
     ctrlCmd.resp_fd    = camfd;
 
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0){
-        LOGE("native_get_capture_setting : ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_get_capture_setting : ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
 
     hal_capture_setting->jpeg_main_img_buf_length = cam_capture_settings.jpeg_main_img_buf_length;
-    LOGV("jpeg_main_img_buf_length = %d",hal_capture_setting->jpeg_main_img_buf_length);
-    LOGD("END native_get_capture_setting");
+    ALOGV("jpeg_main_img_buf_length = %d",hal_capture_setting->jpeg_main_img_buf_length);
+    ALOGD("END native_get_capture_setting");
     return true;
 }
 
@@ -2324,10 +2324,10 @@ static const char ExifAsciiPrefix[] = { 0x41, 0x53, 0x43, 0x49, 0x49, 0x0, 0x0, 
 
 static void addExifTag(exif_tag_id_t tagid, exif_tag_type_t type,
                         uint32_t count, uint8_t copy, void *data) {
-    LOGD("START addExifTag : ");
+    ALOGD("START addExifTag : ");
 
     if(exif_table_numEntries == MAX_EXIF_TABLE_ENTRIES) {
-        LOGE("Number of entries exceeded limit");
+        ALOGE("Number of entries exceeded limit");
         return;
     }
 
@@ -2358,7 +2358,7 @@ static void addExifTag(exif_tag_id_t tagid, exif_tag_type_t type,
     // Increase number of entries
     exif_table_numEntries++;
 
-    LOGD("END addExifTag : ");
+    ALOGD("END addExifTag : ");
 
 }
 
@@ -2404,7 +2404,7 @@ static void setLatLon(exif_tag_id_t tag, const char *latlonString, bool skip_ref
             //set Latitude Ref
             latref[0] = isNegative ? 'S' : 'N';
             latref[1] = '\0';
-            LOGV("Using implicit LATITUDE_REF: '%s'", latref);
+            ALOGV("Using implicit LATITUDE_REF: '%s'", latref);
             addExifTag(EXIFTAGID_GPS_LATITUDE_REF, EXIF_ASCII, 2,
                         1, (void *)latref);
         }
@@ -2417,7 +2417,7 @@ static void setLatLon(exif_tag_id_t tag, const char *latlonString, bool skip_ref
             //set Longitude Ref
             lonref[0] = isNegative ? 'W' : 'E';
             lonref[1] = '\0';
-            LOGV("Using implicit LONGITUDE_REF: '%s'", lonref);
+            ALOGV("Using implicit LONGITUDE_REF: '%s'", lonref);
             addExifTag(EXIFTAGID_GPS_LONGITUDE_REF, EXIF_ASCII, 2,
                         1, (void *)lonref);
         }
@@ -2425,7 +2425,7 @@ static void setLatLon(exif_tag_id_t tag, const char *latlonString, bool skip_ref
 }
 
 void SemcCameraHardware::setGpsParameters() {
-    LOGD("START setGpsParameters : ");
+    ALOGD("START setGpsParameters : ");
 
     const char *str = NULL;
     const char *str_semc_ref = NULL;
@@ -2447,7 +2447,7 @@ void SemcCameraHardware::setGpsParameters() {
         if (use_semc_ref) {
             strncpy(latref, str_semc_ref, 1);
             latref[1] = '\0';
-            LOGV("Using SEMC LATITUDE_REF: '%s'", latref);
+            ALOGV("Using SEMC LATITUDE_REF: '%s'", latref);
             addExifTag(EXIFTAGID_GPS_LATITUDE_REF, EXIF_ASCII, 2,
                         1, (void *)latref);
         }
@@ -2467,7 +2467,7 @@ void SemcCameraHardware::setGpsParameters() {
         if (use_semc_ref) {
             strncpy(lonref, str_semc_ref, 1);
             lonref[1] = '\0';
-            LOGV("Using SEMC LONGITUDE_REF: '%s'", lonref);
+            ALOGV("Using SEMC LONGITUDE_REF: '%s'", lonref);
             addExifTag(EXIFTAGID_GPS_LONGITUDE_REF, EXIF_ASCII, 2,
                         1, (void *)lonref);
         }
@@ -2488,7 +2488,7 @@ void SemcCameraHardware::setGpsParameters() {
         // check if QC /SEMC specific key is used
         int semc_ref = mParameters.getInt(CameraParameters::KEY_GPS_ALTITUDE_REF);
         if( !(semc_ref < 0 || semc_ref > 1) ) {
-            LOGV("Using SEMC ALTITUDE_REF: '%s'", semc_ref);
+            ALOGV("Using SEMC ALTITUDE_REF: '%s'", semc_ref);
             ref = semc_ref;
         }
 
@@ -2521,7 +2521,7 @@ void SemcCameraHardware::setGpsParameters() {
       if (strlen(date) >= 1) {
       strncpy(gpsDateTime, date, 10);
       gpsDateTime[10] = '\0';
-              LOGD("GPS DateStamp is %s", gpsDateTime);
+              ALOGD("GPS DateStamp is %s", gpsDateTime);
       addExifTag(EXIFTAGID_GPS_DATESTAMP, EXIF_ASCII,
                   11, 1, (void *)&gpsDateTime);
       }
@@ -2540,24 +2540,24 @@ void SemcCameraHardware::setGpsParameters() {
 
 bool SemcCameraHardware::native_jpeg_encode(void)
 {
-    LOGD("START native_jpeg_encode : ");
+    ALOGD("START native_jpeg_encode : ");
 
     int jpeg_quality = mParameters.getInt("jpeg-quality");
     if (jpeg_quality >= 0) {
-        LOGV("native_jpeg_encode, current jpeg main img quality =%d",
+        ALOGV("native_jpeg_encode, current jpeg main img quality =%d",
              jpeg_quality);
         if(!LINK_jpeg_encoder_setMainImageQuality(jpeg_quality)) {
-            LOGE("native_jpeg_encode set jpeg-quality failed");
+            ALOGE("native_jpeg_encode set jpeg-quality failed");
             return false;
         }
     }
 
     int thumbnail_quality = mParameters.getInt("jpeg-thumbnail-quality");
     if (thumbnail_quality >= 0) {
-        LOGV("native_jpeg_encode, current jpeg thumbnail quality =%d",
+        ALOGV("native_jpeg_encode, current jpeg thumbnail quality =%d",
              thumbnail_quality);
         if(!LINK_jpeg_encoder_setThumbnailQuality(thumbnail_quality)) {
-            LOGE("native_jpeg_encode set thumbnail-quality failed");
+            ALOGE("native_jpeg_encode set thumbnail-quality failed");
             return false;
         }
     }
@@ -2566,12 +2566,12 @@ bool SemcCameraHardware::native_jpeg_encode(void)
     if (((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0) {
         jpeg_set_location();
         if (mEncodeLocation) {
-            LOGV("native_jpeg_encode:setGpsParameters_call(3rdParty)");
+            ALOGV("native_jpeg_encode:setGpsParameters_call(3rdParty)");
             setGpsParameters();
         }
     } else {
         if(mParameters.getInt(CameraParameters::KEY_GPS_STATUS) == 1) {
-            LOGV("native_jpeg_encode:setGpsParameters_call(Signature)");
+            ALOGV("native_jpeg_encode:setGpsParameters_call(Signature)");
 	        setGpsParameters();
 	    }
     }
@@ -2579,7 +2579,7 @@ bool SemcCameraHardware::native_jpeg_encode(void)
     setExifParameters();
     //Because of the preview size thumbnail image, we need process to convert for the thumbnail size.
     if(!getThumbnailInternal()){
-        LOGE("native_jpeg_encode: getThumbnailInternal is error.");
+        ALOGE("native_jpeg_encode: getThumbnailInternal is error.");
         return false;
     }
 
@@ -2610,7 +2610,7 @@ bool SemcCameraHardware::native_jpeg_encode(void)
                                   mRawHeap->mHeap->getHeapID(),
                                   &mCrop, exif_data, exif_table_numEntries,
                                   jpegPadding/2)) {
-        LOGE("END native_jpeg_encode: jpeg_encoder_encode is error.");
+        ALOGE("END native_jpeg_encode: jpeg_encoder_encode is error.");
         return false;
     }
 
@@ -2620,7 +2620,7 @@ bool SemcCameraHardware::native_jpeg_encode(void)
 bool SemcCameraHardware::native_set_parm(
     cam_ctrl_type type, uint16_t length, void *value)
 {
-    LOGD("START native_set_parm : cam_ctrl_type[%d]",type);
+    ALOGD("START native_set_parm : cam_ctrl_type[%d]",type);
 
 
     struct msm_ctrl_cmd ctrlCmd;
@@ -2632,17 +2632,17 @@ bool SemcCameraHardware::native_set_parm(
     ctrlCmd.resp_fd    = mCameraControlFd;
     ctrlCmd.value = value;
 
-    LOGV("%s: fd %d, type %d, length %d", __FUNCTION__,
+    ALOGV("%s: fd %d, type %d, length %d", __FUNCTION__,
          mCameraControlFd, type, length);
     if (ioctl(mCameraControlFd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0 ||
                 ctrlCmd.status != CAM_CTRL_SUCCESS) {
-        LOGE("%s: error (%s): fd %d, type %d, length %d, status %d",
+        ALOGE("%s: error (%s): fd %d, type %d, length %d, status %d",
              __FUNCTION__, strerror(errno),
              mCameraControlFd, type, length, ctrlCmd.status);
         return false;
     }
 
-    LOGD("END native_set_parm : ");
+    ALOGD("END native_set_parm : ");
 
     return true;
 }
@@ -2655,19 +2655,19 @@ void SemcCameraHardware::jpeg_set_location()
 #define PARSE_LOCATION(what,type,fmt,desc) do {                                \
         pt.what = 0;                                                           \
         const char *what##_str = mParameters.get("gps-"#what);                 \
-        LOGV("GPS PARM %s --> [%s]", "gps-"#what, what##_str);                 \
+        ALOGV("GPS PARM %s --> [%s]", "gps-"#what, what##_str);                 \
         if ((what##_str) && (strlen(what##_str) >= 1)) {                       \
             type what = 0;                                                     \
             if (sscanf(what##_str, fmt, &what) == 1)                           \
                 pt.what = what;                                                \
             else {                                                             \
-                LOGE("GPS " #what " %s could not"                              \
+                ALOGE("GPS " #what " %s could not"                              \
                      " be parsed as a " #desc, what##_str);                    \
                 encode_location = false;                                       \
             }                                                                  \
         }                                                                      \
         else {                                                                 \
-            LOGV("GPS " #what " not specified: "                               \
+            ALOGV("GPS " #what " not specified: "                               \
                  "defaulting to zero in EXIF header.");                        \
             encode_location = false;                                           \
        }                                                                       \
@@ -2682,22 +2682,22 @@ void SemcCameraHardware::jpeg_set_location()
 #undef PARSE_LOCATION
 
     if (encode_location) {
-        LOGD("setting image location ALT %d LAT %lf LON %lf",
+        ALOGD("setting image location ALT %d LAT %lf LON %lf",
              pt.altitude, pt.latitude, pt.longitude);
 /* Disabling until support is available.
         if (!LINK_jpeg_encoder_setLocation(&pt)) {
-            LOGE("jpeg_set_location: LINK_jpeg_encoder_setLocation failed.");
+            ALOGE("jpeg_set_location: LINK_jpeg_encoder_setLocation failed.");
         }
 */
     }
-    else LOGV("not setting image location");
+    else ALOGV("not setting image location");
 
     mEncodeLocation = encode_location;
 }
 
 void SemcCameraHardware::runFrameThread(void *data)
 {
-    LOGV("runFrameThread E");
+    ALOGV("runFrameThread E");
 
     int cnt;
 
@@ -2707,9 +2707,9 @@ void SemcCameraHardware::runFrameThread(void *data)
     // lifetime of this object.  We do not want to dlclose() libqcamera while
     // LINK_cam_frame is still running.
     void *libhandle = ::dlopen("liboemcamera.so", RTLD_NOW);
-    LOGV("FRAME: loading libqcamera at %p", libhandle);
+    ALOGV("FRAME: loading libqcamera at %p", libhandle);
     if (!libhandle) {
-        LOGE("FATAL ERROR: could not dlopen liboemcamera.so: %s", dlerror());
+        ALOGE("FATAL ERROR: could not dlopen liboemcamera.so: %s", dlerror());
     }
     if (libhandle)
 #endif
@@ -2724,7 +2724,7 @@ void SemcCameraHardware::runFrameThread(void *data)
 #if DLOPEN_LIBMMCAMERA
     if (libhandle) {
         ::dlclose(libhandle);
-        LOGV("FRAME: dlclose(libqcamera)");
+        ALOGV("FRAME: dlclose(libqcamera)");
     }
 #endif
 
@@ -2733,12 +2733,12 @@ void SemcCameraHardware::runFrameThread(void *data)
     mFrameThreadWait.signal();
     mFrameThreadWaitLock.unlock();
 
-    LOGV("runFrameThread X");
+    ALOGV("runFrameThread X");
 }
 
 void SemcCameraHardware::runVideoThread(void *data)
 {
-    LOGD("runVideoThread E");
+    ALOGD("runVideoThread E");
     msm_frame* vframe = NULL;
 
     while(true) {
@@ -2747,23 +2747,23 @@ void SemcCameraHardware::runVideoThread(void *data)
         // Exit the thread , in case of stop recording..
         mVideoThreadWaitLock.lock();
         if(mVideoThreadExit){
-            LOGV("Exiting video thread..");
+            ALOGV("Exiting video thread..");
             mVideoThreadWaitLock.unlock();
             pthread_mutex_unlock(&(g_busy_frame_queue.mut));
             break;
         }
         mVideoThreadWaitLock.unlock();
 
-        LOGV("in video_thread : wait for video frame ");
+        ALOGV("in video_thread : wait for video frame ");
         // check if any frames are available in busyQ and give callback to
         // services/video encoder
         cam_frame_wait_video();
-        LOGV("video_thread, wait over..");
+        ALOGV("video_thread, wait over..");
 
         // Exit the thread , in case of stop recording..
         mVideoThreadWaitLock.lock();
         if(mVideoThreadExit){
-            LOGE("Exiting video thread..");
+            ALOGE("Exiting video thread..");
             mVideoThreadWaitLock.unlock();
             pthread_mutex_unlock(&(g_busy_frame_queue.mut));
             break;
@@ -2773,7 +2773,7 @@ void SemcCameraHardware::runVideoThread(void *data)
         // Get the video frame to be encoded
         vframe = cam_frame_get_video ();
         pthread_mutex_unlock(&(g_busy_frame_queue.mut));
-        LOGV("in video_thread : got video frame ");
+        ALOGV("in video_thread : got video frame ");
 
         if (UNLIKELY(mDebugFps)) {
             debugShowVideoFPS();
@@ -2781,10 +2781,10 @@ void SemcCameraHardware::runVideoThread(void *data)
 
         if(vframe != NULL) {
             // Find the offset within the heap of the current buffer.
-            LOGV("Got video frame :  buffer %d base %d ", vframe->buffer, mRecordHeap->mHeap->base());
+            ALOGV("Got video frame :  buffer %d base %d ", vframe->buffer, mRecordHeap->mHeap->base());
             ssize_t offset =
                 (ssize_t)vframe->buffer - (ssize_t)mRecordHeap->mHeap->base();
-            LOGV("offset = %d , alignsize = %d , offset later = %d", offset, mRecordHeap->mAlignedBufferSize, (offset / mRecordHeap->mAlignedBufferSize));
+            ALOGV("offset = %d , alignsize = %d , offset later = %d", offset, mRecordHeap->mAlignedBufferSize, (offset / mRecordHeap->mAlignedBufferSize));
 
             offset /= mRecordHeap->mAlignedBufferSize;
 
@@ -2795,9 +2795,9 @@ void SemcCameraHardware::runVideoThread(void *data)
                 char buf[128];
                 sprintf(buf, "/data/%d_v.yuv", frameCnt);
                 int file_fd = open(buf, O_RDWR | O_CREAT, 0777);
-                LOGV("dumping video frame %d", frameCnt);
+                ALOGV("dumping video frame %d", frameCnt);
                 if (file_fd < 0) {
-                    LOGE("cannot open file\n");
+                    ALOGE("cannot open file\n");
                 }
                 else
                 {
@@ -2810,7 +2810,7 @@ void SemcCameraHardware::runVideoThread(void *data)
 #endif
             // Enable IF block to give frames to encoder , ELSE block for just simulation
 #if 1
-            LOGV("in video_thread : got video frame, before if check giving frame to services/encoder");
+            ALOGV("in video_thread : got video frame, before if check giving frame to services/encoder");
             mCallbackLock.lock();
             int msgEnabled = mMsgEnabled;
             data_callback_timestamp rcb = mDataCallbackTimestamp;
@@ -2818,18 +2818,18 @@ void SemcCameraHardware::runVideoThread(void *data)
             mCallbackLock.unlock();
 
             if(rcb != NULL && (msgEnabled & CAMERA_MSG_VIDEO_FRAME) ) {
-                LOGV("in video_thread : got video frame, giving frame to services/encoder");
+                ALOGV("in video_thread : got video frame, giving frame to services/encoder");
                 /* Extract the timestamp of this frame */
                 nsecs_t timeStamp = nsecs_t(vframe->ts.tv_sec)*1000000000LL + vframe->ts.tv_nsec;
                 rcb(timeStamp, CAMERA_MSG_VIDEO_FRAME, mRecordHeap->mBuffers[offset], rdata);
             }
 #else
             // 720p output2  : simulate release frame here:
-            LOGE("in video_thread simulation , releasing the video frame");
+            ALOGE("in video_thread simulation , releasing the video frame");
             LINK_camframe_free_video(vframe);
 #endif
 
-        } else LOGE("in video_thread get frame returned null");
+        } else ALOGE("in video_thread get frame returned null");
 
 
     } // end of while loop
@@ -2839,36 +2839,36 @@ void SemcCameraHardware::runVideoThread(void *data)
     mVideoThreadWait.signal();
     mVideoThreadWaitLock.unlock();
 
-    LOGV("runVideoThread X");
+    ALOGV("runVideoThread X");
 }
 
 void *video_thread(void *user)
 {
-    LOGV("video_thread E");
+    ALOGV("video_thread E");
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
         obj->runVideoThread(user);
     }
-    else LOGE("not starting video thread: the object went away!");
-    LOGV("video_thread X");
+    else ALOGE("not starting video thread: the object went away!");
+    ALOGV("video_thread X");
     return NULL;
 }
 
 void *frame_thread(void *user)
 {
-    LOGD("frame_thread E");
+    ALOGD("frame_thread E");
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
         obj->runFrameThread(user);
     }
-    else LOGW("not starting frame thread: the object went away!");
-    LOGD("frame_thread X");
+    else ALOGW("not starting frame thread: the object went away!");
+    ALOGD("frame_thread X");
     return NULL;
 }
 
 bool SemcCameraHardware::initPreview()
 {
-    LOGD("START initPreview : ");
+    ALOGD("START initPreview : ");
 
     // See comments in deinitPreview() for why we have to wait for the frame
     // thread here, and why we can't use pthread_join().
@@ -2883,7 +2883,7 @@ bool SemcCameraHardware::initPreview()
     
     videoWidth = previewWidth;  // temporary , should be configurable later
     videoHeight = previewHeight;
-    LOGV("initPreview E: preview size=%dx%d videosize = %d x %d", previewWidth, previewHeight, videoWidth, videoHeight );
+    ALOGV("initPreview E: preview size=%dx%d videosize = %d x %d", previewWidth, previewHeight, videoWidth, videoHeight );
 
     if( ( mCurrentTarget == TARGET_MSM7630 ) || (mCurrentTarget == TARGET_QSD8250)) {
         mDimension.video_width = videoWidth;
@@ -2892,23 +2892,23 @@ bool SemcCameraHardware::initPreview()
         // for 720p , preview can be 768X432
         previewWidth = mDimension.display_width;
         previewHeight= mDimension.display_height;
-        LOGV("initPreview : preview size=%dx%d videosize = %d x %d", previewWidth, previewHeight, mDimension.video_width, mDimension.video_height );
+        ALOGV("initPreview : preview size=%dx%d videosize = %d x %d", previewWidth, previewHeight, mDimension.video_width, mDimension.video_height );
     }
 
 
     mFrameThreadWaitLock.lock();
     while (mFrameThreadRunning) {
-        LOGV("initPreview: waiting for old frame thread to complete.");
+        ALOGV("initPreview: waiting for old frame thread to complete.");
         mFrameThreadWait.wait(mFrameThreadWaitLock);
-        LOGV("initPreview: old frame thread completed.");
+        ALOGV("initPreview: old frame thread completed.");
     }
     mFrameThreadWaitLock.unlock();
 
     mSnapshotThreadWaitLock.lock();
     while (mSnapshotThreadRunning) {
-        LOGV("initPreview: waiting for old snapshot thread to complete.");
+        ALOGV("initPreview: waiting for old snapshot thread to complete.");
         mSnapshotThreadWait.wait(mSnapshotThreadWaitLock);
-        LOGV("initPreview: old snapshot thread completed.");
+        ALOGV("initPreview: old snapshot thread completed.");
     }
     mSnapshotThreadWaitLock.unlock();
 
@@ -2926,12 +2926,12 @@ bool SemcCameraHardware::initPreview()
 
     if (!mPreviewHeap->initialized()) {
         mPreviewHeap.clear();
-        LOGE("initPreview X: could not initialize Camera preview heap.");
+        ALOGE("initPreview X: could not initialize Camera preview heap.");
         return false;
     }
     if( mCurrentTarget == TARGET_MSM7630 ) {
 	if(mPostViewHeap == NULL) {
-	    LOGV(" Allocating Postview heap ");
+	    ALOGV(" Allocating Postview heap ");
 	    /* mPostViewHeap should be declared only for 7630 target */
 	    mPostViewHeap =
 		new PmemPool("/dev/pmem_adsp",
@@ -2946,7 +2946,7 @@ bool SemcCameraHardware::initPreview()
 	    if (!mPostViewHeap->initialized()) {
         mPreviewHeap.clear();
 		mPostViewHeap.clear();
-		LOGE(" Failed to initialize Postview Heap");
+		ALOGE(" Failed to initialize Postview Heap");
 		return false;
 	    }
 	}
@@ -2958,7 +2958,7 @@ bool SemcCameraHardware::initPreview()
         if(!initRecord()){
             mPreviewHeap.clear();
             mPostViewHeap.clear();
-            LOGE("END initPreview : initRecord Error");
+            ALOGE("END initPreview : initRecord Error");
             return false;
         }
     }
@@ -2968,7 +2968,7 @@ bool SemcCameraHardware::initPreview()
     //if(false == ret_set_param) {
     //    mPreviewHeap.clear();
     //    mPostViewHeap.clear();
-    //    LOGE("END initPreview : set previewmode Error");
+    //    ALOGE("END initPreview : set previewmode Error");
     //    return false;
     //}
 
@@ -2981,7 +2981,7 @@ bool SemcCameraHardware::initPreview()
     if(false == ret_set_param) {
         mPreviewHeap.clear();
         mPostViewHeap.clear();
-        LOGE("END initPreview : set limit minimum fps Error");
+        ALOGE("END initPreview : set limit minimum fps Error");
         return false;
     }
 #endif//SCRITCH_OFF
@@ -3002,7 +3002,7 @@ bool SemcCameraHardware::initPreview()
     if (!picsizeCheck(mDimension.picture_width ,mDimension.picture_height)) {
         mPreviewHeap.clear();
         mPostViewHeap.clear();
-        LOGE("END initPreview  picsizeCheck failed.  Not starting preview.");
+        ALOGE("END initPreview  picsizeCheck failed.  Not starting preview.");
         return false;
     }
 
@@ -3040,7 +3040,7 @@ bool SemcCameraHardware::initPreview()
         frame_parms.frame = frames[kPreviewBufferCount - 1];
         frame_parms.video_frame =  recordframes[ACTIVE_VIDEO_BUFFERS];
 
-        LOGV ("initpreview before cam_frame thread carete , video frame  buffer=%lu fd=%d y_off=%d cbcr_off=%d \n",
+        ALOGV ("initpreview before cam_frame thread carete , video frame  buffer=%lu fd=%d y_off=%d cbcr_off=%d \n",
           (unsigned long)frame_parms.video_frame.buffer, frame_parms.video_frame.fd, frame_parms.video_frame.y_off,
           frame_parms.video_frame.cbcr_off);
         mFrameThreadRunning = !pthread_create(&mFrameThread,
@@ -3052,17 +3052,17 @@ bool SemcCameraHardware::initPreview()
     } else {
         mPreviewHeap.clear();
         mPostViewHeap.clear();
-        LOGE("initPreview SET_PARM_DIMENSION failed");
+        ALOGE("initPreview SET_PARM_DIMENSION failed");
     }
 
-    LOGD("END initPreview ");
+    ALOGD("END initPreview ");
 
     return ret;
 }
 
 void SemcCameraHardware::deinitPreview(void)
 {
-    LOGD("START deinitPreview : ");
+    ALOGD("START deinitPreview : ");
 
 
     // When we call deinitPreview(), we signal to the frame thread that it
@@ -3081,31 +3081,31 @@ void SemcCameraHardware::deinitPreview(void)
 
     LINK_camframe_terminate();
 
-    LOGD("END deinitPreview : ");
+    ALOGD("END deinitPreview : ");
 }
 
 bool SemcCameraHardware::initRawSnapshot()
 {
-    LOGV("initRawSnapshot E");
+    ALOGV("initRawSnapshot E");
 
     //get width and height from Dimension Object
     bool ret = native_set_parm(CAMERA_SET_PARM_DIMENSION,
                                sizeof(cam_ctrl_dimension_t), &mDimension);
 
     if(!ret){
-        LOGE("initRawSnapshot X: failed to set dimension");
+        ALOGE("initRawSnapshot X: failed to set dimension");
         return false;
     }
     int rawSnapshotSize = mDimension.raw_picture_height *
                            mDimension.raw_picture_width;
 
-    LOGV("raw_snapshot_buffer_size = %d, raw_picture_height = %d, "\
+    ALOGV("raw_snapshot_buffer_size = %d, raw_picture_height = %d, "\
          "raw_picture_width = %d",
           rawSnapshotSize, mDimension.raw_picture_height,
           mDimension.raw_picture_width);
 
     if (mRawSnapShotPmemHeap != NULL) {
-        LOGV("initRawSnapshot: clearing old mRawSnapShotPmemHeap.");
+        ALOGV("initRawSnapshot: clearing old mRawSnapShotPmemHeap.");
         mRawSnapShotPmemHeap.clear();
     }
 
@@ -3121,10 +3121,10 @@ bool SemcCameraHardware::initRawSnapshot()
 
     if (!mRawSnapShotPmemHeap->initialized()) {
         mRawSnapShotPmemHeap.clear();
-        LOGE("initRawSnapshot X: error initializing mRawSnapshotHeap");
+        ALOGE("initRawSnapshot X: error initializing mRawSnapshotHeap");
         return false;
     }
-    LOGV("initRawSnapshot X");
+    ALOGV("initRawSnapshot X");
     return true;
 
 }
@@ -3135,10 +3135,10 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
 
     mParameters.getPictureSize(&rawWidth, &rawHeight);
 
-    LOGD("START initRaw : picture size=%dx%d", rawWidth, rawHeight);
+    ALOGD("START initRaw : picture size=%dx%d", rawWidth, rawHeight);
 
     if (mJpegHeap != NULL) {
-        LOGV("initRaw: clearing old mJpegHeap.");
+        ALOGV("initRaw: clearing old mJpegHeap.");
         mJpegHeap.clear();
     }
 
@@ -3159,7 +3159,7 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
         mRawHeap.clear();
     }
 
-    LOGV("initRaw: initializing mRawHeap.");
+    ALOGV("initRaw: initializing mRawHeap.");
     mRawHeap =
         new PmemPool("/dev/pmem_adsp",
                      MemoryHeapBase::READ_ONLY | MemoryHeapBase::NO_CACHING,
@@ -3173,13 +3173,13 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
                      "snapshot camera");
 
     if (!mRawHeap->initialized()) {
-	LOGE("initRaw X failed ");
+	ALOGE("initRaw X failed ");
 	mRawHeap.clear();
-	LOGE("initRaw X: error initializing mRawHeap");
+	ALOGE("initRaw X: error initializing mRawHeap");
 	return false;
     }
 
-    LOGV("do_mmap snapshot pbuf = %p, pmem_fd = %d",
+    ALOGV("do_mmap snapshot pbuf = %p, pmem_fd = %d",
          (uint8_t *)mRawHeap->mHeap->base(), mRawHeap->mHeap->getHeapID());
 
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0){
@@ -3198,7 +3198,7 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
         if (!mRawHeapSub->initialized()) {
             mRawHeapSub.clear();
             mRawHeap.clear();
-            LOGE("initRaw X: error initializing mRawHeapSub");
+            ALOGE("initRaw X: error initializing mRawHeapSub");
             return false;
         }
     }
@@ -3229,11 +3229,11 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
             mRawHeapSub.clear();
 
             mRawHeap.clear();
-            LOGE("initRaw X failed: error initializing mThumbnailHeap.");
+            ALOGE("initRaw X failed: error initializing mThumbnailHeap.");
             return false;
         }
 
-    LOGD("END initRaw ");
+    ALOGD("END initRaw ");
 
     return true;
 }
@@ -3241,16 +3241,16 @@ bool SemcCameraHardware::initRaw(bool initJpegHeap)
 
 void SemcCameraHardware::deinitRawSnapshot()
 {
-    LOGV("deinitRawSnapshot E");
+    ALOGV("deinitRawSnapshot E");
     mRawSnapShotPmemHeap.clear();
     mRawSnapshotAshmemHeap.clear();
-    LOGV("deinitRawSnapshot X");
+    ALOGV("deinitRawSnapshot X");
 }
 
 void SemcCameraHardware::deinitRaw()
 {
-    LOGD("START deinitRaw : ");
-    LOGV("deinitRaw E");
+    ALOGD("START deinitRaw : ");
+    ALOGV("deinitRaw E");
 
     mThumbnailHeap.clear();
     mJpegHeap.clear();
@@ -3259,18 +3259,18 @@ void SemcCameraHardware::deinitRaw()
     mRawHeapSub.clear();
     mJpegSnapShotHeap.clear();
 
-    LOGD("END deinitRaw : ");
+    ALOGD("END deinitRaw : ");
 }
 
 void SemcCameraHardware::release()
 {
-    LOGD("START release : ");
+    ALOGD("START release : ");
 
     Mutex::Autolock l(&mLock);
     mCameraExitFlag = true;
 #if DLOPEN_LIBMMCAMERA
     if (libmmcamera == NULL) {
-        LOGE("ERROR: multiple release!");
+        ALOGE("ERROR: multiple release!");
         return;
     }
 #else
@@ -3293,7 +3293,7 @@ void SemcCameraHardware::release()
 #if SCRITCH_OFF
     if(setFlashlightBrightness(mParameters, CameraParameters::TALLY_LIGHT,
        CameraParameters::TALLY_LIGHT_OFF) != NO_ERROR) {
-        LOGE("release : setFlashlightBrightness error.");
+        ALOGE("release : setFlashlightBrightness error.");
     }
 #endif//SCRITCH_OFF
 
@@ -3302,16 +3302,16 @@ void SemcCameraHardware::release()
         mPostViewHeap = NULL;
     }
     if(mReceiveExifDataFlag) {
-        LOGV("takePicture: waiting for old snapshot thread to complete.");
+        ALOGV("takePicture: waiting for old snapshot thread to complete.");
         mReleaseWaitLock.lock();
         mReleaseWait.wait(mReleaseWaitLock);
         mReleaseWaitLock.unlock();
-        LOGV("takePicture: old snapshot thread completed.");
+        ALOGV("takePicture: old snapshot thread completed.");
     }
 
     LINK_jpeg_encoder_join();
     if(mEncoderThreadInfo) {
-        LOGV("mEncoderThreadInfo is not null");
+        ALOGV("mEncoderThreadInfo is not null");
         pthread_join(mEncoderThreadInfo,NULL);
     }
     deinitRaw();
@@ -3325,7 +3325,7 @@ void SemcCameraHardware::release()
 	    ctrlCmd.type = (uint16_t)CAMERA_EXIT;
 	    ctrlCmd.resp_fd = mCameraControlFd; // FIXME: this will be put in by the kernel
 	    if (ioctl(mCameraControlFd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0)
-		LOGE("ioctl CAMERA_EXIT fd %d error %s",
+		ALOGE("ioctl CAMERA_EXIT fd %d error %s",
 			mCameraControlFd, strerror(errno));
 
 	}
@@ -3340,32 +3340,32 @@ void SemcCameraHardware::release()
 #if DLOPEN_LIBMMCAMERA
     if (libmmcamera) {
         ::dlclose(libmmcamera);
-        LOGV("dlclose(libqcamera)");
+        ALOGV("dlclose(libqcamera)");
         libmmcamera = NULL;
     }
     if(libmmipl) {
         ::dlclose(libmmipl);
-        LOGV("release : dlclose(libmmipl)");
+        ALOGV("release : dlclose(libmmipl)");
         libmmipl = NULL;
     }
 #endif
     singleton.clear();
 
-    LOGD("END release : ");
+    ALOGD("END release : ");
 
 }
 
 SemcCameraHardware::~SemcCameraHardware()
 {
-    LOGD("START ~SemcCameraHardware : ");
+    ALOGD("START ~SemcCameraHardware : ");
 
-    LOGD("END ~SemcCameraHardware : ");
+    ALOGD("END ~SemcCameraHardware : ");
 
 }
 
 sp<IMemoryHeap> SemcCameraHardware::getRawHeap() const
 {
-    LOGD("getRawHeap : ");
+    ALOGD("getRawHeap : ");
 
     return mDisplayHeap != NULL ? mDisplayHeap->mHeap : NULL;
 }
@@ -3373,34 +3373,34 @@ sp<IMemoryHeap> SemcCameraHardware::getRawHeap() const
 sp<IMemoryHeap> SemcCameraHardware::getPreviewHeap() const
 {
 
-    LOGD("getPreviewHeap : ");
+    ALOGD("getPreviewHeap : ");
 
     return mPreviewHeap != NULL ? mPreviewHeap->mHeap : NULL;
 }
 
 status_t SemcCameraHardware::startPreviewInternal()
 {
-    LOGD("START startPreviewInternal");
+    ALOGD("START startPreviewInternal");
     
     int ioctlRetVal = true;
 
-    LOGV("in startPreviewInternal : E");
+    ALOGV("in startPreviewInternal : E");
 
     if(mCameraRunning) {
-        LOGV("startPreview X: preview already running.");
+        ALOGV("startPreview X: preview already running.");
         return NO_ERROR;
     }
     if(CAMERAHAL_STATE_TAKEPICSTART == mStateCameraHal){
         mInSnapshotModeWaitLock.lock();
-        LOGV("startPreviewInternal: waiting complete.");
+        ALOGV("startPreviewInternal: waiting complete.");
         mInSnapshotModeWait.wait(mInSnapshotModeWaitLock);
-        LOGV("startPreviewInternal: old waiting completed.");
+        ALOGV("startPreviewInternal: old waiting completed.");
         mInSnapshotModeWaitLock.unlock();
     }else {
         if((CAMERAHAL_STATE_INIT != mStateCameraHal) &&
            (CAMERAHAL_STATE_PREVIEWSTOP != mStateCameraHal) &&
            (CAMERAHAL_STATE_TAKEPICDONE != mStateCameraHal)){
-            LOGW("startPreviewInternal state Error");
+            ALOGW("startPreviewInternal state Error");
             return UNKNOWN_ERROR;
         }
     }
@@ -3409,7 +3409,7 @@ status_t SemcCameraHardware::startPreviewInternal()
         mLastQueuedFrame = NULL;
         mPreviewInitialized = initPreview();
         if (!mPreviewInitialized) {
-            LOGE("startPreview X initPreview failed.  Not starting preview.");
+            ALOGE("startPreview X initPreview failed.  Not starting preview.");
             return UNKNOWN_ERROR;
         }
     }
@@ -3431,7 +3431,7 @@ status_t SemcCameraHardware::startPreviewInternal()
         deinitPreview();
         mPreviewInitialized = false;
         mOverlay = NULL;
-        LOGE("startPreview X: native_start_preview failed!");
+        ALOGE("startPreview X: native_start_preview failed!");
 
         mStateCameraHal = oldState;
 
@@ -3442,33 +3442,33 @@ status_t SemcCameraHardware::startPreviewInternal()
     exif_table_numEntries = 0;
 
     if(native_get_maxzoom(mCameraControlFd, (void *)&mMaxZoom) == true){
-        LOGD("Maximum zoom value is %d", mMaxZoom);
+        ALOGD("Maximum zoom value is %d", mMaxZoom);
         mParameters.set("zoom-supported", "true");
     } else {
-        LOGE("Failed to get maximum zoom value...setting max zoom to zero");
+        ALOGE("Failed to get maximum zoom value...setting max zoom to zero");
         mParameters.set("zoom-supported", "false");
         mMaxZoom = 0;
     }
     mParameters.set("max-zoom",mMaxZoom);
     {
         Mutex::Autolock lock(&mSetCollective3rdParty);
-        LOGD("%s mPreviewFlag %d", __FUNCTION__, mPreviewFlag);
+        ALOGD("%s mPreviewFlag %d", __FUNCTION__, mPreviewFlag);
         while(!mPreviewFlag) {
-            LOGD("%s, Waiting to get Signal", __FUNCTION__);
+            ALOGD("%s, Waiting to get Signal", __FUNCTION__);
             mSetCollective3rdPartyWait.wait(mSetCollective3rdParty);
         }
-        LOGD("Calling setCollective3rdParty");
+        ALOGD("Calling setCollective3rdParty");
         setCollective3rdParty();
     }
 
-    LOGD("END startPreviewInternal");
+    ALOGD("END startPreviewInternal");
 
     return NO_ERROR;
 }
 
 status_t SemcCameraHardware::startPreview()
 {
-    LOGD("START startPreview");
+    ALOGD("START startPreview");
 
     Mutex::Autolock l(&mLock);
     return startPreviewInternal();
@@ -3476,7 +3476,7 @@ status_t SemcCameraHardware::startPreview()
 
 void SemcCameraHardware::stopPreviewInternal()
 {
-    LOGD("START stopPreviewInternal mCameraRunning[%d]", mCameraRunning);
+    ALOGD("START stopPreviewInternal mCameraRunning[%d]", mCameraRunning);
 
     if (mCameraRunning) {
 
@@ -3517,7 +3517,7 @@ void SemcCameraHardware::stopPreviewInternal()
 	    deinitPreview();
 	    if( ( mCurrentTarget == TARGET_MSM7630 ) || (mCurrentTarget == TARGET_QSD8250)) {
 		mVideoThreadWaitLock.lock();
-		LOGV("in stopPreviewInternal: making mVideoThreadExit 1");
+		ALOGV("in stopPreviewInternal: making mVideoThreadExit 1");
 		mVideoThreadExit = 1;
 		mVideoThreadWaitLock.unlock();
 		//  720p : signal the video thread , and check in video thread if stop is called, if so exit video thread.
@@ -3531,18 +3531,18 @@ void SemcCameraHardware::stopPreviewInternal()
 	    }
 	    mPreviewInitialized = false;
 	}
-	else LOGE("stopPreviewInternal: failed to stop preview");
+	else ALOGE("stopPreviewInternal: failed to stop preview");
     }
 
     mPreviewFlag = false;
 
-    LOGD("END stopPreviewInternal mCameraRunning[%d]", mCameraRunning);
+    ALOGD("END stopPreviewInternal mCameraRunning[%d]", mCameraRunning);
 
 }
 
 void SemcCameraHardware::stopPreview()
 {
-    LOGD("START stopPreview");
+    ALOGD("START stopPreview");
 
     Mutex::Autolock l(&mLock);
     {
@@ -3553,7 +3553,7 @@ void SemcCameraHardware::stopPreview()
 
     mAfterTakepictureFlag = false;
 
-    LOGD("END stopPreview");
+    ALOGD("END stopPreview");
 
 }
 
@@ -3573,7 +3573,7 @@ void SemcCameraHardware::runAutoFocus()
 
     mAutoFocusFd = open(MSM_CAMERA_CONTROL, O_RDWR);
     if (mAutoFocusFd < 0) {
-        LOGE("%s autofocus: cannot open %s: %s",
+        ALOGE("%s autofocus: cannot open %s: %s",
             __FUNCTION__,
              MSM_CAMERA_CONTROL,
              strerror(errno));
@@ -3588,9 +3588,9 @@ void SemcCameraHardware::runAutoFocus()
     // lifetime of this object.  We do not want to dlclose() libqcamera while
     // LINK_cam_frame is still running.
     libhandle = ::dlopen("liboemcamera.so", RTLD_NOW);
-    LOGV("AF: loading libqcamera at %p", libhandle);
+    ALOGV("AF: loading libqcamera at %p", libhandle);
     if (!libhandle) {
-        LOGE("FATAL ERROR: could not dlopen liboemcamera.so: %s", dlerror());
+        ALOGE("FATAL ERROR: could not dlopen liboemcamera.so: %s", dlerror());
         close(mAutoFocusFd);
         mAutoFocusFd = -1;
         mAutoFocusThreadRunning = false;
@@ -3604,17 +3604,17 @@ void SemcCameraHardware::runAutoFocus()
                                 mParameters.get(CameraParameters::KEY_FOCUS_MODE));
 
     /* This will block until either AF completes or is cancelled. */
-    LOGV("af start (fd %d mode %d)", mAutoFocusFd, afMode);
+    ALOGV("af start (fd %d mode %d)", mAutoFocusFd, afMode);
     status_t err;
     err = mAfLock.tryLock();
     if(err == NO_ERROR) {
         {
             Mutex::Autolock cameraRunningLock(&mCameraRunningLock);
             if(mCameraRunning){
-                LOGV("Start AF");
+                ALOGV("Start AF");
                 status = native_set_afmode(mAutoFocusFd, afMode);
             }else{
-                LOGV("As Camera preview is not running, AF not issued");
+                ALOGV("As Camera preview is not running, AF not issued");
                 status = false;
             }
         }
@@ -3623,12 +3623,12 @@ void SemcCameraHardware::runAutoFocus()
     else{
         //AF Cancel would have acquired the lock,
         //so, no need to perform any AF
-        LOGV("%s As Cancel auto focus is in progress, auto focus request "
+        ALOGV("%s As Cancel auto focus is in progress, auto focus request "
                 "is ignored", __FUNCTION__);
         status = false;
     }
 
-    LOGV("af done: %d", (int)status);
+    ALOGV("af done: %d", (int)status);
     close(mAutoFocusFd);
     mAutoFocusFd = -1;
 
@@ -3647,14 +3647,14 @@ done:
 #if DLOPEN_LIBMMCAMERA
     if (libhandle) {
         ::dlclose(libhandle);
-        LOGV("AF: dlclose(libqcamera)");
+        ALOGV("AF: dlclose(libqcamera)");
     }
 #endif
 }
 
 status_t SemcCameraHardware::cancelAutoFocusInternal()
 {
-    LOGD("START cancelAutoFocusInternal");
+    ALOGD("START cancelAutoFocusInternal");
 
     CameraHalState oldState = mStateCameraHal;
     mStateCameraHal = CAMERAHAL_STATE_AFCANCEL;
@@ -3662,7 +3662,7 @@ status_t SemcCameraHardware::cancelAutoFocusInternal()
     {
         Mutex::Autolock cbLock(&mCallbackLock);
         if (native_stop_autofocus(mCameraControlFd) == false) {
-            LOGE("END cancelAutoFocusInternal : native_stop_autofocus is false");
+            ALOGE("END cancelAutoFocusInternal : native_stop_autofocus is false");
             mStateCameraHal = oldState;
             return UNKNOWN_ERROR;
         }
@@ -3676,30 +3676,30 @@ status_t SemcCameraHardware::cancelAutoFocusInternal()
     }
 
     mStateCameraHal = CAMERAHAL_STATE_PREVIEWSTART;
-    LOGD("END cancelAutoFocusInternal");
+    ALOGD("END cancelAutoFocusInternal");
     return NO_ERROR;
 
 }
 
 void *auto_focus_thread(void *user)
 {
-    LOGV("auto_focus_thread E");
+    ALOGV("auto_focus_thread E");
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
         obj->runAutoFocus();
     }
-    else LOGW("not starting autofocus: the object went away!");
-    LOGV("auto_focus_thread X");
+    else ALOGW("not starting autofocus: the object went away!");
+    ALOGV("auto_focus_thread X");
     return NULL;
 }
 #if 0
 status_t SemcCameraHardware::autoFocus()
 {
-    LOGD("autoFocus E");
+    ALOGD("autoFocus E");
     Mutex::Autolock l(&mLock);
 
     if (mCameraControlFd < 0) {
-        LOGD("not starting autofocus: main control fd %d", mCameraControlFd);
+        ALOGD("not starting autofocus: main control fd %d", mCameraControlFd);
         return UNKNOWN_ERROR;
     }
 
@@ -3707,7 +3707,7 @@ status_t SemcCameraHardware::autoFocus()
         mAutoFocusThreadLock.lock();
         if (!mAutoFocusThreadRunning) {
             if (native_prepare_snapshot(mCameraControlFd, mParameters) == false) {
-               LOGD("native_prepare_snapshot failed!\n");
+               ALOGD("native_prepare_snapshot failed!\n");
                setSocTorchMode(0);
                mAutoFocusThreadLock.unlock();
                return UNKNOWN_ERROR;
@@ -3723,7 +3723,7 @@ status_t SemcCameraHardware::autoFocus()
                 !pthread_create(&thr, &attr,
                                 auto_focus_thread, NULL);
             if (!mAutoFocusThreadRunning) {
-                LOGD("failed to start autofocus thread");
+                ALOGD("failed to start autofocus thread");
                 mAutoFocusThreadLock.unlock();
                 return UNKNOWN_ERROR;
             }
@@ -3731,13 +3731,13 @@ status_t SemcCameraHardware::autoFocus()
         mAutoFocusThreadLock.unlock();
     }
 
-    LOGD("autoFocus X");
+    ALOGD("autoFocus X");
     return NO_ERROR;
 }
 #else
 status_t SemcCameraHardware::autoFocus()
 {
-    LOGD("START autoFocus : mStateCameraHal[%d]",mStateCameraHal);
+    ALOGD("START autoFocus : mStateCameraHal[%d]",mStateCameraHal);
     Mutex::Autolock l(&mLock);
 
     mCallbackLock.lock();
@@ -3747,30 +3747,30 @@ status_t SemcCameraHardware::autoFocus()
     mCallbackLock.unlock();
 
     if (mCameraControlFd < 0) {
-        LOGE("END autoFocus : not starting autofocus: main control fd %d", mCameraControlFd);
+        ALOGE("END autoFocus : not starting autofocus: main control fd %d", mCameraControlFd);
         return UNKNOWN_ERROR;
     }
 
     if (true == mAutoFocusThreadRunning) {
-        LOGW("END autoFocus : AutoFocus is already in progress");
+        ALOGW("END autoFocus : AutoFocus is already in progress");
         return NO_ERROR;
     }
 
     if(CAMERAHAL_STATE_INIT == mStateCameraHal){
-        LOGW("END autoFocus : mStateCameraHal is INIT");
+        ALOGW("END autoFocus : mStateCameraHal is INIT");
         return NO_ERROR;
     }else if(CAMERAHAL_STATE_PREVIEWSTART != mStateCameraHal){
-        LOGW("END autoFocus : Status Error mStateCameraHal[%d]",mStateCameraHal);
+        ALOGW("END autoFocus : Status Error mStateCameraHal[%d]",mStateCameraHal);
         return UNKNOWN_ERROR;
     }
 
     if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),
                CameraParameters::FOCUS_MODE_INFINITY) == 0) {
         if (autoFocusEnabled) {
-            LOGD("%s Calling CB 1", __FUNCTION__);
+            ALOGD("%s Calling CB 1", __FUNCTION__);
             cb(CAMERA_MSG_FOCUS, true, 0, data);
         }
-        LOGD("END autoFocus : KEY_FOCUS_MODE is FOCUS_MODE_INFINITY");
+        ALOGD("END autoFocus : KEY_FOCUS_MODE is FOCUS_MODE_INFINITY");
         return NO_ERROR;
     }
 
@@ -3783,16 +3783,16 @@ status_t SemcCameraHardware::autoFocus()
                                 mParameters.get(CameraParameters::KEY_FOCUS_MODE));
     //if(native_set_parm(CAMERA_SET_PARM_AF_FRAME, sizeof(afMode), (void *)&afMode, DRV_TIMEOUT_10K))
     //{
-    //    LOGD("%s AFmode set to %s", __FUNCTION__, mParameters.get(CameraParameters::KEY_FOCUS_MODE));
+    //    ALOGD("%s AFmode set to %s", __FUNCTION__, mParameters.get(CameraParameters::KEY_FOCUS_MODE));
     //}else{
-    //    LOGD("%s AFmode not set correctly", __FUNCTION__);
+    //    ALOGD("%s AFmode not set correctly", __FUNCTION__);
     //}
 #if SCRITCH_OFF
     if(setAfMode(mParameters, CameraParameters::AF_MODE, CameraParameters::SINGLE) != NO_ERROR) {
         if (autoFocusEnabled) {
             cb(CAMERA_MSG_FOCUS, false, 0, data);
         }
-        LOGD("END autoFocus :setAfMode is error.");
+        ALOGD("END autoFocus :setAfMode is error.");
         return UNKNOWN_ERROR;
     }
 #endif//SCRITCH_OFF
@@ -3804,7 +3804,7 @@ status_t SemcCameraHardware::autoFocus()
     const char *str = mParameters.get(CameraParameters::KEY_FLASH_MODE);
 
 
-    LOGD("%s, Flash Value %s", __FUNCTION__, str);
+    ALOGD("%s, Flash Value %s", __FUNCTION__, str);
 
     if (str != NULL) {
        int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
@@ -3816,16 +3816,16 @@ status_t SemcCameraHardware::autoFocus()
 
     if(native_start_autofocus(mCameraControlFd, false, false, mFocusLockValue) == false){
         if (autoFocusEnabled) {
-            LOGD("%s Calling CB 2", __FUNCTION__);
+            ALOGD("%s Calling CB 2", __FUNCTION__);
             cb(CAMERA_MSG_FOCUS, false, 0, data);
         }
-        LOGE("END autoFocus :native_start_autofocus is error.");
+        ALOGE("END autoFocus :native_start_autofocus is error.");
         mStateCameraHal = oldState;
         return UNKNOWN_ERROR;
     }
     mAutoFocusThreadRunning = true;
 
-    LOGD("END autoFocus : mStateCameraHal[%d]",mStateCameraHal);
+    ALOGD("END autoFocus : mStateCameraHal[%d]",mStateCameraHal);
     return NO_ERROR;
 
 }
@@ -3833,7 +3833,7 @@ status_t SemcCameraHardware::autoFocus()
 
 status_t SemcCameraHardware::cancelAutoFocus()
 {
-    LOGD("START cancelAutoFocus");
+    ALOGD("START cancelAutoFocus");
 
     Mutex::Autolock l(&mLock);
 
@@ -3843,29 +3843,29 @@ status_t SemcCameraHardware::cancelAutoFocus()
     }
 
     setSocTorchMode(0); 
-    LOGD("END cancelAutoFocus : return[%d]",rc);
+    ALOGD("END cancelAutoFocus : return[%d]",rc);
     return rc;
 }
 
 void SemcCameraHardware::runSnapshotThread(void *data)
 {
-    LOGD("START runSnapshotThread");
+    ALOGD("START runSnapshotThread");
     mTakepictureFlag = true;
 
     if (!native_start_snapshot(mCameraControlFd)) {
-        LOGE("runSnapshotThread: native_start_snapshot failed!");
+        ALOGE("runSnapshotThread: native_start_snapshot failed!");
         takePictureErrorCallback();
         return;
     }
 
     if (!receiveRawPicture()) {
-        LOGE("runSnapshotThread: receiveRawPicture failed!");
+        ALOGE("runSnapshotThread: receiveRawPicture failed!");
         takePictureErrorCallback();
         return;
     }
 
     if (mTakepictureThreadJoin == true) {
-        LOGD("mTakepictureThreadJoin:true before startrawsnapshot() call");
+        ALOGD("mTakepictureThreadJoin:true before startrawsnapshot() call");
         mSnapshotThreadWaitLock.lock();
         mSnapshotThreadRunning = false;
         mSnapshotThreadWait.signal();
@@ -3878,18 +3878,18 @@ void SemcCameraHardware::runSnapshotThread(void *data)
     retCbErrType ret = startrawsnapshot();
     mTakepictureFlag = false;
     if(RET_FAIL_YUV_CB == ret) {
-        LOGE("runSnapshotThread : startrawsnapshot is error(YUV callback failed)");
+        ALOGE("runSnapshotThread : startrawsnapshot is error(YUV callback failed)");
         takePictureErrorCallback();
         return;
     } else if(RET_FAIL_JPEG_CB == ret) {
-        LOGE("runSnapshotThread : startrawsnapshot is error(JPEG callback failed)");
+        ALOGE("runSnapshotThread : startrawsnapshot is error(JPEG callback failed)");
         takePictureErrorCallback();
         return;
     }
 
     if (mDataCallback && (mMsgEnabled & CAMERA_MSG_COMPRESSED_IMAGE)) {
         if (mTakepictureThreadJoin == true) {
-            LOGD("mTakepictureThreadJoin:true before LINK_jpeg_encoder_init() call");
+            ALOGD("mTakepictureThreadJoin:true before LINK_jpeg_encoder_init() call");
             mSnapshotThreadWaitLock.lock();
             mSnapshotThreadRunning = false;
             mSnapshotThreadWait.signal();
@@ -3904,17 +3904,17 @@ void SemcCameraHardware::runSnapshotThread(void *data)
         mReceiveExifDataFlag = true;
         if (LINK_jpeg_encoder_init()) {
             if (native_jpeg_encode()) {
-                LOGV("runSnapshotThread : LOCK ACQUIRED ");
+                ALOGV("runSnapshotThread : LOCK ACQUIRED ");
                 mSnapshotThreadWaitLock.lock();
                 mSnapshotThreadRunning = false;
                 mSnapshotThreadWait.signal();
                 mSnapshotThreadWaitLock.unlock();
-                LOGV("runSnapshotThread: SIGNALLED QCS_IDLE ");
-                LOGD("END runSnapshotThread : native_jpeg_encode(success)");
+                ALOGV("runSnapshotThread: SIGNALLED QCS_IDLE ");
+                ALOGD("END runSnapshotThread : native_jpeg_encode(success)");
                 mTakepictureThreadJoin = false;
                 return;
             } else {
-                LOGE("runSnapshotThread : native_jpeg_encode is error");
+                ALOGE("runSnapshotThread : native_jpeg_encode is error");
                 takePictureErrorCallback();
                if(mCameraExitFlag){
                    mReleaseWaitLock.lock();
@@ -3925,7 +3925,7 @@ void SemcCameraHardware::runSnapshotThread(void *data)
                 return;
             }
         } else {
-            LOGE("runSnapshotThread : LINK_jpeg_encoder_init is error");
+            ALOGE("runSnapshotThread : LINK_jpeg_encoder_init is error");
             takePictureErrorCallback();
             if(mCameraExitFlag){
                 mReleaseWaitLock.lock();
@@ -3978,7 +3978,7 @@ void SemcCameraHardware::runSnapshotThread(void *data)
             }
         }
     } else {
-        LOGD("JPEG callback and RAW callback is NULL.");
+        ALOGD("JPEG callback and RAW callback is NULL.");
         mSnapshotThreadWaitLock.lock();
         mSnapshotThreadRunning = false;
         mSnapshotThreadWait.signal();
@@ -3989,45 +3989,45 @@ void SemcCameraHardware::runSnapshotThread(void *data)
     deinitRaw();
     mTakepictureThreadJoin = false;
 
-    LOGD("END runSnapshotThread");
+    ALOGD("END runSnapshotThread");
 
 }
 
 void *snapshot_thread(void *user)
 {
-    LOGD("START snapshot_thread");
+    ALOGD("START snapshot_thread");
 
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
         obj->runSnapshotThread(user);
     }
-    else LOGW("not starting snapshot thread: the object went away!");
+    else ALOGW("not starting snapshot thread: the object went away!");
 
-    LOGD("END snapshot_thread");
+    ALOGD("END snapshot_thread");
 
     return NULL;
 }
 
 status_t SemcCameraHardware::takePicture()
 {
-    LOGD("START takePicture : mMsgEnabled[%d]",mMsgEnabled);
+    ALOGD("START takePicture : mMsgEnabled[%d]",mMsgEnabled);
 
     Mutex::Autolock l(&mLock);
 
     if(CAMERAHAL_STATE_INIT == mStateCameraHal){
-        LOGW("END takePicture : mStateCameraHal is INIT");
+        ALOGW("END takePicture : mStateCameraHal is INIT");
         return NO_ERROR;
     }else if((CAMERAHAL_STATE_PREVIEWSTART != mStateCameraHal) &&
             (CAMERAHAL_STATE_PREVIEWSTOP != mStateCameraHal) &&
             (CAMERAHAL_STATE_TAKEPICDONE != mStateCameraHal)){
         if((((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0)){
             if(CAMERAHAL_STATE_AFLOCK != mStateCameraHal){
-                LOGE("END takePicture : Status error(Signature)");
+                ALOGE("END takePicture : Status error(Signature)");
                 return UNKNOWN_ERROR;
             }
         }else{
             if(CAMERAHAL_STATE_AFSTART != mStateCameraHal){
-                LOGE("END takePicture : Status error(3rdParty)");
+                ALOGE("END takePicture : Status error(3rdParty)");
                 return UNKNOWN_ERROR;
             }
         }
@@ -4039,9 +4039,9 @@ status_t SemcCameraHardware::takePicture()
     // Wait for old snapshot thread to complete.
     mSnapshotThreadWaitLock.lock();
     while (mSnapshotThreadRunning) {
-        LOGV("takePicture: waiting for old snapshot thread to complete.");
+        ALOGV("takePicture: waiting for old snapshot thread to complete.");
         mSnapshotThreadWait.wait(mSnapshotThreadWaitLock);
-        LOGV("takePicture: old snapshot thread completed.");
+        ALOGV("takePicture: old snapshot thread completed.");
     }
 
     if( mCurrentTarget == TARGET_MSM7630 ) {
@@ -4051,7 +4051,7 @@ status_t SemcCameraHardware::takePicture()
     }
 
     if(native_set_ae_awb_lock(mCameraControlFd, true, true) == false){
-        LOGE("END takePicture : native_set_ae_awb_lock failed!");
+        ALOGE("END takePicture : native_set_ae_awb_lock failed!");
         mSnapshotThreadWaitLock.unlock();
         return UNKNOWN_ERROR;
     }
@@ -4060,7 +4060,7 @@ status_t SemcCameraHardware::takePicture()
     if(mParameters.getPictureFormat() != 0 &&
             !strcmp(mParameters.getPictureFormat(),
                     CameraParameters::PIXEL_FORMAT_RAW)){
-        LOGE("END takePicture : PictureFormat failed!");
+        ALOGE("END takePicture : PictureFormat failed!");
         return UNKNOWN_ERROR;
     }
 
@@ -4074,7 +4074,7 @@ status_t SemcCameraHardware::takePicture()
     mStateCameraHal = CAMERAHAL_STATE_TAKEPICSTART;
 
     if (!initRaw(mDataCallback && (mMsgEnabled & CAMERA_MSG_COMPRESSED_IMAGE))) {
-        LOGE("initRaw failed.  Not taking picture.");
+        ALOGE("initRaw failed.  Not taking picture.");
         mSnapshotThreadWaitLock.unlock();
         return UNKNOWN_ERROR;
     }
@@ -4110,7 +4110,7 @@ status_t SemcCameraHardware::takePicture()
                                              NULL);
     mSnapshotThreadWaitLock.unlock();
 
-    LOGD("END takePicture ");
+    ALOGD("END takePicture ");
 
     return mSnapshotThreadRunning ? NO_ERROR : UNKNOWN_ERROR;
 }
@@ -4118,27 +4118,27 @@ status_t SemcCameraHardware::takePicture()
 status_t SemcCameraHardware::cancelPicture()
 {
     status_t rc;
-    LOGD("START cancelPicture");
+    ALOGD("START cancelPicture");
     mTakepictureThreadJoin = true;
     while (mSnapshotThreadRunning) {
-        LOGD("cancelPicture: waiting for old snapshot thread to complete.");
+        ALOGD("cancelPicture: waiting for old snapshot thread to complete.");
         mSnapshotThreadWait.wait(mSnapshotThreadWaitLock);
-        LOGD(": old snapshot thread completed.");
+        ALOGD(": old snapshot thread completed.");
     }
     if (mTakepictureFlag == true) {
         rc = native_stop_snapshot(mCameraControlFd) ? NO_ERROR : UNKNOWN_ERROR;
         mTakepictureFlag = false;
     } else {
-        LOGD("END cancelPicture: mTakepictureFlag : false");
+        ALOGD("END cancelPicture: mTakepictureFlag : false");
         return NO_ERROR;
     }
-    LOGV("END cancelPicture : %d", rc);
+    ALOGV("END cancelPicture : %d", rc);
     return rc;
 }
 
 void SemcCameraHardware::takePictureErrorCallback()
 {
-    LOGD("START takePictureErrorCallback");
+    ALOGD("START takePictureErrorCallback");
 
     if (mDataCallback && (mMsgEnabled & CAMERA_MSG_RAW_IMAGE)) {
         mDataCallback(CAMERA_MSG_RAW_IMAGE, NULL,  mCallbackCookie);
@@ -4159,12 +4159,12 @@ void SemcCameraHardware::takePictureErrorCallback()
     mSnapshotThreadWaitLock.unlock();
 
     mStateCameraHal = CAMERAHAL_STATE_TAKEPICDONE;
-    LOGD("END takePictureErrorCallback");
+    ALOGD("END takePictureErrorCallback");
 }
 
 status_t SemcCameraHardware::setParameters(const CameraParameters& params)
 {
-    LOGD("START setParameters: E params = %p", &params);
+    ALOGD("START setParameters: E params = %p", &params);
 
     Mutex::Autolock l(&mLock);
     status_t rc, final_rc = NO_ERROR;
@@ -4174,15 +4174,15 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
         if (rc = setPreviewSize(params)){
             final_rc = rc;
         }
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
         if (rc = setPictureSize(params)){
             final_rc = rc;
         }
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
         if (native_step_zoom(mCameraControlFd, mZoom) == false){
             final_rc = UNKNOWN_ERROR;
         }
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
 #if SCRITCH_OFF
         if (rc = setAfMode(params)){
             final_rc = rc;
@@ -4195,7 +4195,7 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
         if (rc = setFocusMode(params)){
             final_rc = rc;
         }
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
         return final_rc;
     }
     //BEN QRCODE
@@ -4211,53 +4211,53 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
     }
 
     if ((rc = setPreviewSize(params)))  final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setPictureSize(params)))  final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setJpegQuality(params)))  final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
 
     if ((rc = setAutoExposure(params))) final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setWhiteBalance(params))) final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setGpsLocation(params)))  final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setRotation(params)))     final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setFocusMode(params)))    final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setBrightness(params)))   final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setPictureFormat(params))) final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
 //Use J setFlash Function
     if ((rc = setFlash(params)))        final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setExposureCompensation(params))) final_rc = rc;
 #if SCRITCH_OFF
     if ((rc = setFlashlightBrightness(params))) final_rc = rc;
 #endif//SCRITCH_OFF
     if ((rc = setJpegThumbnailSize(params))) final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     if ((rc = setPreviewFpsRange(params))) final_rc = rc;
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     /* case 3rdparty */
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0)
     {
         if ((rc = setAntibanding(params))){
             final_rc = rc;
         }
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
         if ((rc = setEffect(params))){
             final_rc = rc;
         }
         if (((rc = setFramerate(params)))){
             final_rc = rc;
         }
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
         setOrientation(params);
-        LOGD("final_rc = %d", final_rc);
+        ALOGD("final_rc = %d", final_rc);
     }
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0)
     {
@@ -4282,7 +4282,7 @@ status_t SemcCameraHardware::setParameters(const CameraParameters& params)
 #endif//SCRITCH_OFF
     }
 
-    LOGD("END setParameters: final_rc[%d]",final_rc);
+    ALOGD("END setParameters: final_rc[%d]",final_rc);
 
     return final_rc;
 }
@@ -4296,7 +4296,7 @@ CameraParameters SemcCameraHardware::getParameters() const
 status_t SemcCameraHardware::sendCommand(int32_t command, int32_t arg1,
                                              int32_t arg2)
 {
-    LOGV("sendCommand: EX");
+    ALOGV("sendCommand: EX");
     return BAD_VALUE;
 }
 
@@ -4319,7 +4319,7 @@ extern "C" void HAL_getCameraInfo(int cameraId, struct CameraInfo* cameraInfo)
 
 extern "C" sp<CameraHardwareInterface> HAL_openCameraHardware(int cameraId)
 {
-    LOGV("openCameraHardware: call createInstance");
+    ALOGV("openCameraHardware: call createInstance");
     if(cameraId > sizeof(sCameraInfo) / sizeof(sCameraInfo[0]))
 	return NULL;
     return SemcCameraHardware::createInstance();
@@ -4334,19 +4334,19 @@ wp<SemcCameraHardware> SemcCameraHardware::singleton;
 sp<CameraHardwareInterface> SemcCameraHardware::createInstance()
 
 {
-    LOGD("createInstance: E");
+    ALOGD("createInstance: E");
     Mutex::Autolock lock(&singleton_lock);
 
     if (singleton != 0) {
         sp<CameraHardwareInterface> hardware = singleton.promote();
         if (hardware != 0) {
-            LOGD("createInstance: X return existing hardware=%p", &(*hardware));
+            ALOGD("createInstance: X return existing hardware=%p", &(*hardware));
             sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
             if (obj != 0)
             {
                 obj->semcCameraExtensionJudgment(true);
             }else{
-                LOGD("END createInstance: not_obj ");
+                ALOGD("END createInstance: not_obj ");
             }
             return hardware;
         }
@@ -4356,7 +4356,7 @@ sp<CameraHardwareInterface> SemcCameraHardware::createInstance()
         struct stat st;
         int rc = stat("/dev/oncrpc", &st);
         if (rc < 0) {
-            LOGD("createInstance: X failed to create hardware: %s", strerror(errno));
+            ALOGD("createInstance: X failed to create hardware: %s", strerror(errno));
             return NULL;
         }
     }
@@ -4366,13 +4366,13 @@ sp<CameraHardwareInterface> SemcCameraHardware::createInstance()
     singleton = hardware;
 
     if (!cam->startCamera()) {
-        LOGE("%s: startCamera failed!", __FUNCTION__);
+        ALOGE("%s: startCamera failed!", __FUNCTION__);
         singleton.clear();
         return NULL;
     }
     cam->semcCameraExtensionJudgment(true);
     cam->initDefaultParameters();
-    LOGD("createInstance: X created hardware=%p", &(*hardware));
+    ALOGD("createInstance: X created hardware=%p", &(*hardware));
     return hardware;
 }
 
@@ -4381,23 +4381,23 @@ sp<SemcCameraHardware> SemcCameraHardware::getInstance()
 {
     sp<CameraHardwareInterface> hardware = singleton.promote();
     if (hardware != 0) {
-        //    LOGV("getInstance: X old instance of hardware");
+        //    ALOGV("getInstance: X old instance of hardware");
         return sp<SemcCameraHardware>(static_cast<SemcCameraHardware*>(hardware.get()));
     } else {
-        LOGV("getInstance: X new instance of hardware");
+        ALOGV("getInstance: X new instance of hardware");
         return sp<SemcCameraHardware>();
     }
 }
 void SemcCameraHardware::receiveRecordingFrame(struct msm_frame *frame)
 {
-    LOGV("receiveRecordingFrame E");
+    ALOGV("receiveRecordingFrame E");
     // post busy frame
     if (frame)
     {
         cam_frame_post_video (frame);
     }
-    else LOGE("in  receiveRecordingFrame frame is NULL");
-    LOGV("receiveRecordingFrame X");
+    else ALOGE("in  receiveRecordingFrame frame is NULL");
+    ALOGV("receiveRecordingFrame X");
 }
 
 
@@ -4438,7 +4438,7 @@ bool SemcCameraHardware::native_zoom_image(int fd, int srcOffset, int dstOffSet,
         e->src_rect.w = previewWidth;
         e->src_rect.h = previewHeight;
     }
-    //LOGV(" native_zoom : SRC_RECT : x,y = %d,%d \t w,h = %d, %d",
+    //ALOGV(" native_zoom : SRC_RECT : x,y = %d,%d \t w,h = %d, %d",
     //        e->src_rect.x, e->src_rect.y, e->src_rect.w, e->src_rect.h);
 
     e->dst_rect.x = 0;
@@ -4448,7 +4448,7 @@ bool SemcCameraHardware::native_zoom_image(int fd, int srcOffset, int dstOffSet,
 
     result = ioctl(fb_fd, MSMFB_BLIT, &zoomImage.list);
     if (result < 0) {
-        LOGE("MSM_FBIOBLT failed! line=%d\n", __LINE__);
+        ALOGE("MSM_FBIOBLT failed! line=%d\n", __LINE__);
         return false;
     }
     return true;
@@ -4465,7 +4465,7 @@ void SemcCameraHardware::debugShowPreviewFPS() const
     nsecs_t diff = now - mLastFpsTime;
     if (diff > ms2ns(250)) {
         mFps =  ((mFrameCount - mLastFrameCount) * float(s2ns(1))) / diff;
-        LOGI("Preview Frames Per Second: %.4f", mFps);
+        ALOGI("Preview Frames Per Second: %.4f", mFps);
         mLastFpsTime = now;
         mLastFrameCount = mFrameCount;
     }
@@ -4482,7 +4482,7 @@ void SemcCameraHardware::debugShowVideoFPS() const
     nsecs_t diff = now - mLastFpsTime;
     if (diff > ms2ns(250)) {
         mFps =  ((mFrameCount - mLastFrameCount) * float(s2ns(1))) / diff;
-        LOGI("Video Frames Per Second: %.4f", mFps);
+        ALOGI("Video Frames Per Second: %.4f", mFps);
         mLastFpsTime = now;
         mLastFrameCount = mFrameCount;
     }
@@ -4492,10 +4492,10 @@ static ssize_t previewframe_offset = 0;
 
 void SemcCameraHardware::receivePreviewFrame(struct msm_frame *frame)
 {
-    LOGV("receivePreviewFrame E");
+    ALOGV("receivePreviewFrame E");
 
     if (!mCameraRunning) {
-        LOGE("ignoring preview callback--camera has been stopped");
+        ALOGE("ignoring preview callback--camera has been stopped");
         return;
     }
 
@@ -4554,7 +4554,7 @@ void SemcCameraHardware::receivePreviewFrame(struct msm_frame *frame)
 	    ssize_t dstOffset_addr = offset * mPreviewHeap->mAlignedBufferSize;
 	    if( !native_zoom_image(mPreviewHeap->mHeap->getHeapID(),
 			offset_addr, dstOffset_addr, crop)) {
-		LOGE(" Error while doing MDP zoom ");
+		ALOGE(" Error while doing MDP zoom ");
                 offset = offset_addr / mPreviewHeap->mAlignedBufferSize;
 	    }
 	}
@@ -4580,7 +4580,7 @@ void SemcCameraHardware::receivePreviewFrame(struct msm_frame *frame)
     if( ((mCurrentTarget == TARGET_MSM7630) || (mCurrentTarget == TARGET_QSD8250))  && recordingEnabled() ) {
         if(!recordingState){
             recordingState = 1; // recording started
-            LOGV(" in receivePreviewframe : recording enabled calling startRecording ");
+            ALOGV(" in receivePreviewframe : recording enabled calling startRecording ");
             startRecording();
         }
     }
@@ -4591,22 +4591,22 @@ void SemcCameraHardware::receivePreviewFrame(struct msm_frame *frame)
             rcb(systemTime(), CAMERA_MSG_VIDEO_FRAME, mPreviewHeap->mBuffers[offset], rdata);
             Mutex::Autolock rLock(&mRecordFrameLock);
             if (mReleasedRecordingFrame != true) {
-                LOGV("block waiting for frame release");
+                ALOGV("block waiting for frame release");
                 mRecordWait.wait(mRecordFrameLock);
-                LOGV("frame released, continuing");
+                ALOGV("frame released, continuing");
             }
             mReleasedRecordingFrame = false;
         }
     }
     mInPreviewCallback = false;
 
-//    LOGV("receivePreviewFrame X");
+//    ALOGV("receivePreviewFrame X");
 }
 
 
 bool SemcCameraHardware::initRecord()
 {
-    LOGV("initREcord E");
+    ALOGV("initREcord E");
 
     mRecordFrameSize = (mDimension.video_width  * mDimension.video_height *3)/2;
     mRecordHeap = new PmemPool("/dev/pmem_adsp",
@@ -4619,7 +4619,7 @@ bool SemcCameraHardware::initRecord()
                                 "record");
     if (!mRecordHeap->initialized()) {
         mRecordHeap.clear();
-        LOGE("initRecord X: could not initialize record heap.");
+        ALOGE("initRecord X: could not initialize record heap.");
         return false;
     }
     for (int cnt = 0; cnt < kRecordBufferCount; cnt++) {
@@ -4630,7 +4630,7 @@ bool SemcCameraHardware::initRecord()
         recordframes[cnt].cbcr_off = mDimension.video_width  * mDimension.video_height;
         recordframes[cnt].path = OUTPUT_TYPE_V;
 
-        LOGV ("initRecord :  record heap , video buffers  buffer=%lu fd=%d y_off=%d cbcr_off=%d \n",
+        ALOGV ("initRecord :  record heap , video buffers  buffer=%lu fd=%d y_off=%d cbcr_off=%d \n",
           (unsigned long)recordframes[cnt].buffer, recordframes[cnt].fd, recordframes[cnt].y_off,
           recordframes[cnt].cbcr_off);
     }
@@ -4641,9 +4641,9 @@ bool SemcCameraHardware::initRecord()
 
     mVideoThreadWaitLock.lock();
     while (mVideoThreadRunning) {
-        LOGV("initRecord: waiting for old video thread to complete.");
+        ALOGV("initRecord: waiting for old video thread to complete.");
         mVideoThreadWait.wait(mVideoThreadWaitLock);
-        LOGV("initRecord : old video thread completed.");
+        ALOGV("initRecord : old video thread completed.");
     }
     mVideoThreadWaitLock.unlock();
 
@@ -4651,34 +4651,34 @@ bool SemcCameraHardware::initRecord()
     LINK_cam_frame_flush_free_video();
     for(int i=ACTIVE_VIDEO_BUFFERS+1;i <kRecordBufferCount; i++)
         LINK_camframe_free_video(&recordframes[i]);
-    LOGV("initREcord X");
+    ALOGV("initREcord X");
 
     return true;
 }
 
 status_t SemcCameraHardware::startRecording()
 {
-    LOGV("startRecording E");
+    ALOGV("startRecording E");
     int ret;
     Mutex::Autolock l(&mLock);
     mReleasedRecordingFrame = false;
     if( (ret=startPreviewInternal())== NO_ERROR){
         if( ( mCurrentTarget == TARGET_MSM7630 ) || (mCurrentTarget == TARGET_QSD8250))  {
-            LOGV(" in startREcording : calling native_start_recording");
+            ALOGV(" in startREcording : calling native_start_recording");
             if(!native_start_recording(mCameraControlFd)){
-                LOGE(" in startREcording : native_start_recording error");
+                ALOGE(" in startREcording : native_start_recording error");
                 return UNKNOWN_ERROR;
             }
             recordingState = 1;
             // Remove the left out frames in busy Q and them in free Q.
             // this should be done before starting video_thread so that,
             // frames in previous recording are flushed out.
-            LOGV("frames in busy Q = %d", g_busy_frame_queue.num_of_frames);
+            ALOGV("frames in busy Q = %d", g_busy_frame_queue.num_of_frames);
             while((g_busy_frame_queue.num_of_frames) >0){
                 msm_frame* vframe = cam_frame_get_video ();
                 LINK_camframe_free_video(vframe);
             }
-            LOGV("frames in busy Q = %d after deQueing", g_busy_frame_queue.num_of_frames);
+            ALOGV("frames in busy Q = %d after deQueing", g_busy_frame_queue.num_of_frames);
             // Start video thread and wait for busy frames to be encoded, this thread
             // should be closed in stopRecording
             mVideoThreadWaitLock.lock();
@@ -4699,7 +4699,7 @@ status_t SemcCameraHardware::startRecording()
 
 void SemcCameraHardware::stopRecording()
 {
-    LOGD("START stopRecording");
+    ALOGD("START stopRecording");
 
     Mutex::Autolock l(&mLock);
     {
@@ -4710,7 +4710,7 @@ void SemcCameraHardware::stopRecording()
 
         if(mDataCallback && !(mCurrentTarget == TARGET_QSD8250) &&
                          (mMsgEnabled & CAMERA_MSG_PREVIEW_FRAME)) {
-            LOGV("stopRecording: X, preview still in progress");
+            ALOGV("stopRecording: X, preview still in progress");
             return;
         }
     }
@@ -4730,14 +4730,14 @@ void SemcCameraHardware::stopRecording()
 
     recordingState = 0; // recording not started
 
-    LOGD("END stopRecording");
+    ALOGD("END stopRecording");
 
 }
 
 void SemcCameraHardware::releaseRecordingFrame(
        const sp<IMemory>& mem __attribute__((unused)))
 {
-    LOGD("START releaseRecordingFrame");
+    ALOGD("START releaseRecordingFrame");
 
     Mutex::Autolock rLock(&mRecordFrameLock);
     mReleasedRecordingFrame = true;
@@ -4749,11 +4749,11 @@ void SemcCameraHardware::releaseRecordingFrame(
         size_t size;
         sp<IMemoryHeap> heap = mem->getMemory(&offset, &size);
         msm_frame* releaseframe = NULL;
-        LOGV(" in release recording frame :  heap base %d offset %d buffer %d ", heap->base(), offset, heap->base() + offset );
+        ALOGV(" in release recording frame :  heap base %d offset %d buffer %d ", heap->base(), offset, heap->base() + offset );
         int cnt;
         for (cnt = 0; cnt < kRecordBufferCount; cnt++) {
             if((unsigned int)recordframes[cnt].buffer == (unsigned int)(heap->base()+ offset)){
-                LOGV("in release recording frame found match , releasing buffer %d", (unsigned int)recordframes[cnt].buffer);
+                ALOGV("in release recording frame found match , releasing buffer %d", (unsigned int)recordframes[cnt].buffer);
                 releaseframe = &recordframes[cnt];
                 break;
             }
@@ -4766,14 +4766,14 @@ void SemcCameraHardware::releaseRecordingFrame(
 
             mFrameThreadWaitLock.unlock();
         } else {
-            LOGE("in release recordingframe XXXXX error , buffer not found");
+            ALOGE("in release recordingframe XXXXX error , buffer not found");
             for (int i=0; i< kRecordBufferCount; i++) {
-                 LOGE(" recordframes[%d].buffer = %d", i, (unsigned int)recordframes[i].buffer);
+                 ALOGE(" recordframes[%d].buffer = %d", i, (unsigned int)recordframes[i].buffer);
             }
         }
     }
 
-    LOGD("END releaseRecordingFrame");
+    ALOGD("END releaseRecordingFrame");
 }
 
 bool SemcCameraHardware::recordingEnabled()
@@ -4804,9 +4804,9 @@ void SemcCameraHardware::notifyShutter(common_crop_t *crop, bool mPlayShutterSou
     }
 
     if (mShutterPending && mNotifyCallback && (mMsgEnabled & CAMERA_MSG_SHUTTER)) {
-        LOGV("out2_w=%d, out2_h=%d, in2_w=%d, in2_h=%d",
+        ALOGV("out2_w=%d, out2_h=%d, in2_w=%d, in2_h=%d",
              crop->out2_w, crop->out2_h, crop->in2_w, crop->in2_h);
-        LOGV("out1_w=%d, out1_h=%d, in1_w=%d, in1_h=%d",
+        ALOGV("out1_w=%d, out1_h=%d, in1_w=%d, in1_h=%d",
              crop->out1_w, crop->out1_h, crop->in1_w, crop->in1_h);
 
         mDisplayHeap = mRawHeap;
@@ -4823,13 +4823,13 @@ void SemcCameraHardware::notifyShutter(common_crop_t *crop, bool mPlayShutterSou
 
 static void receive_shutter_callback(common_crop_t *crop)
 {
-    LOGV("receive_shutter_callback: E");
+    ALOGV("receive_shutter_callback: E");
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
         /* Just play shutter sound at this time */
         obj->notifyShutter(crop, true);
     }
-    LOGV("receive_shutter_callback: X");
+    ALOGV("receive_shutter_callback: X");
 }
 
 // Crop the picture in place.
@@ -4866,7 +4866,7 @@ static void crop_yuv420(uint32_t width, uint32_t height,
 
 
 void SemcCameraHardware::receiveRawSnapshot(){
-    LOGV("receiveRawSnapshot E");
+    ALOGV("receiveRawSnapshot E");
 
     Mutex::Autolock cbLock(&mCallbackLock);
     /* Issue notifyShutter with mPlayShutterSoundOnly as TRUE */
@@ -4875,7 +4875,7 @@ void SemcCameraHardware::receiveRawSnapshot(){
     if (mDataCallback && (mMsgEnabled & CAMERA_MSG_COMPRESSED_IMAGE)) {
 
         if(native_get_picture(mCameraControlFd, &mCrop) == false) {
-            LOGE("receiveRawSnapshot X: native_get_picture failed!");
+            ALOGE("receiveRawSnapshot X: native_get_picture failed!");
             return;
         }
         /* Its necessary to issue another notifyShutter here with
@@ -4888,7 +4888,7 @@ void SemcCameraHardware::receiveRawSnapshot(){
 
         //Create a Ashmem heap to copy data from PMem heap for application layer
         if(mRawSnapshotAshmemHeap != NULL){
-            LOGV("receiveRawSnapshot: clearing old mRawSnapShotAshmemHeap.");
+            ALOGV("receiveRawSnapshot: clearing old mRawSnapShotAshmemHeap.");
             mRawSnapshotAshmemHeap.clear();
         }
         mRawSnapshotAshmemHeap = new AshmemPool(
@@ -4899,7 +4899,7 @@ void SemcCameraHardware::receiveRawSnapshot(){
                                         );
 
         if(!mRawSnapshotAshmemHeap->initialized()){
-            LOGE("receiveRawSnapshot X: error initializing mRawSnapshotHeap");
+            ALOGE("receiveRawSnapshot X: error initializing mRawSnapshotHeap");
             deinitRawSnapshot();
             return;
         }
@@ -4916,17 +4916,17 @@ void SemcCameraHardware::receiveRawSnapshot(){
     //cleanup
     deinitRawSnapshot();
 
-    LOGV("receiveRawSnapshot X");
+    ALOGV("receiveRawSnapshot X");
 }
 
 bool SemcCameraHardware::receiveRawPicture()
 {
-    LOGD("START receiveRawPicture");
+    ALOGD("START receiveRawPicture");
 
     Mutex::Autolock cbLock(&mCallbackLock);
     if (mDataCallback && (mMsgEnabled & CAMERA_MSG_RAW_IMAGE)) {
         if(native_get_picture(mCameraControlFd, &mCrop) == false) {
-            LOGE("receiveRawPicture : native_get_picture failed!");
+            ALOGE("receiveRawPicture : native_get_picture failed!");
             return false;
         }
 
@@ -4934,14 +4934,14 @@ bool SemcCameraHardware::receiveRawPicture()
         // shutter callback if cam config thread has not done that.
         notifyShutter(&mCrop, false);
     }
-    LOGD("END receiveRawPicture");
+    ALOGD("END receiveRawPicture");
     return true;
 }
 
 void SemcCameraHardware::receiveJpegPictureFragment(
     uint8_t *buff_ptr, uint32_t buff_size)
 {
-    LOGD("START receiveJpegPictureFragment : buff_size[%d]",(int)buff_size);
+    ALOGD("START receiveJpegPictureFragment : buff_size[%d]",(int)buff_size);
 
     sp<AshmemPool> autoThumbnailbuff = mThumbnailBuffHeap;
 
@@ -4950,7 +4950,7 @@ void SemcCameraHardware::receiveJpegPictureFragment(
                                          buff_size + mThumbnailsize,
                                          "thumbnail_buffer");
     if(!mThumbnailBuffHeap->initialized()) {
-        LOGE("receiveJpegPicture : mThumbnailBuffHeap initialized error");
+        ALOGE("receiveJpegPicture : mThumbnailBuffHeap initialized error");
         mThumbnailBuffHeap.clear();
         return;
     }
@@ -4963,21 +4963,21 @@ void SemcCameraHardware::receiveJpegPictureFragment(
     memcpy((uint8_t *)mThumbnailBuffHeap->mHeap->base()+mThumbnailsize , buff_ptr, buff_size);
     mThumbnailsize += buff_size;
 
-    LOGD("END receiveJpegPictureFragment ");
+    ALOGD("END receiveJpegPictureFragment ");
 
 }
 
 void SemcCameraHardware::receiveJpegPicture(void)
 {
-    LOGD("START receiveJpegPicture : mThumbnailsize[%d]",(int)mThumbnailsize);
+    ALOGD("START receiveJpegPicture : mThumbnailsize[%d]",(int)mThumbnailsize);
     do {
         if (mThumbnailBuffHeap == NULL) {
-            LOGE("receiveJpegPicture : mThumbnailBuffHeap is NULL");
+            ALOGE("receiveJpegPicture : mThumbnailBuffHeap is NULL");
             mStateCameraHal = CAMERAHAL_STATE_TAKEPICDONE;
             break;
         }
         if (!receiveExifData()) {
-            LOGE("receiveJpegPicture : receiveExifData error");
+            ALOGE("receiveJpegPicture : receiveExifData error");
             mStateCameraHal = CAMERAHAL_STATE_TAKEPICDONE;
             break;
         }
@@ -4998,7 +4998,7 @@ void SemcCameraHardware::receiveJpegPicture(void)
     mReceiveExifDataFlag = false;
     //Turn OFF the flash
     setSocTorchMode(0);
-    LOGD("END receiveJpegPicture");
+    ALOGD("END receiveJpegPicture");
 
 }
 
@@ -5013,7 +5013,7 @@ status_t SemcCameraHardware::setPreviewSize(const CameraParameters& params)
     size_t i = 0;
     params.getPreviewSize(&width, &height);
 
-    LOGD("START setPreviewSize : requested preview size %d x %d", width, height);
+    ALOGD("START setPreviewSize : requested preview size %d x %d", width, height);
 
     // Validate the preview size
     for (i = 0; i < previewSizeCount; ++i) {
@@ -5025,7 +5025,7 @@ status_t SemcCameraHardware::setPreviewSize(const CameraParameters& params)
             if(width == 1280 && height == 720 &&
              ((mCurrentTarget == TARGET_MSM7630) || (mCurrentTarget == TARGET_QSD8250))){
                  if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0){
-                LOGD("change preview resolution to 768X432 since recording is in 720p");
+                ALOGD("change preview resolution to 768X432 since recording is in 720p");
                      mDimension.display_width = CAMERA_SIGNATURE_HD720P_DISPSIZE_WIDTH;
                      mDimension.display_height= CAMERA_SIGNATURE_HD720P_DISPSIZE_HEIGHT;
                  }else{
@@ -5039,7 +5039,7 @@ status_t SemcCameraHardware::setPreviewSize(const CameraParameters& params)
 #if SCRITCH_OFF
             mCurrentAspectValue = supportedPreviewSizes[i].aspect;
 #endif//SCRITCH_OFF
-            LOGD("setPreviewSize : preview size %d x %d", supportedPreviewSizes[i].width, supportedPreviewSizes[i].height);
+            ALOGD("setPreviewSize : preview size %d x %d", supportedPreviewSizes[i].width, supportedPreviewSizes[i].height);
 
             if(((CAMERA_FWVGASIZE_WIDTH == mDimension.display_width) && (CAMERA_FWVGASIZE_HEIGHT == mDimension.display_height)) ||
                ((CAMERA_OHDFWVGASIZE_WIDTH == mDimension.display_width) && (CAMERA_OHDFWVGASIZE_HEIGHT == mDimension.display_height))){
@@ -5054,7 +5054,7 @@ status_t SemcCameraHardware::setPreviewSize(const CameraParameters& params)
         mDimension.display_width = DEFAULT_PREVIEW_WIDTH;
         mDimension.display_height= DEFAULT_PREVIEW_HEIGHT;
         mCurrentAspectValue = ASPECT_VGA;
-        LOGD("setPreviewSize : Invalid preview size requested: ");
+        ALOGD("setPreviewSize : Invalid preview size requested: ");
     }
     return NO_ERROR;
 }
@@ -5065,7 +5065,7 @@ status_t SemcCameraHardware::setPictureSize(const CameraParameters& params)
     int i = 0;
     params.getPictureSize(&width, &height);
 
-    LOGD("START setPictureSize :requested preview size %d x %d", width, height);
+    ALOGD("START setPictureSize :requested preview size %d x %d", width, height);
 
     // Validate the picture size
     for (i = PICTURE_SIZE_COUNT_SEMC - 1; i > -1; --i) {
@@ -5074,7 +5074,7 @@ status_t SemcCameraHardware::setPictureSize(const CameraParameters& params)
                 mParameters.setPictureSize(picture_sizes[i].width, picture_sizes[i].height);
                 mDimension.picture_width = picture_sizes[i].width;
                 mDimension.picture_height = picture_sizes[i].height;
-                LOGD("END setPictureSize : size width %d height %d", picture_sizes[i].width, picture_sizes[i].height);
+                ALOGD("END setPictureSize : size width %d height %d", picture_sizes[i].width, picture_sizes[i].height);
                 return NO_ERROR;
             }
     }
@@ -5086,13 +5086,13 @@ status_t SemcCameraHardware::setPictureSize(const CameraParameters& params)
                 mParameters.setPictureSize(picture_sizes[i].width, picture_sizes[i].height);
                 mDimension.picture_width = picture_sizes[i].width;
                 mDimension.picture_height = picture_sizes[i].height;
-                LOGD("END setPictureSize : size width %d height %d", picture_sizes[i].width, picture_sizes[i].height);
+                ALOGD("END setPictureSize : size width %d height %d", picture_sizes[i].width, picture_sizes[i].height);
                 return NO_ERROR;
             }
         }
     }
 #endif//SCRITCH_OFF
-    LOGE("END setPictureSize :Invalid picture size requested: %dx%d", width, height);
+    ALOGE("END setPictureSize :Invalid picture size requested: %dx%d", width, height);
     return BAD_VALUE;
 }
 
@@ -5102,7 +5102,7 @@ status_t SemcCameraHardware::setJpegQuality(const CameraParameters& params,
                                                 int int_value /* = -1 */,
                                                 bool collective /* = false */)
 {
-    LOGD("%s E", __FUNCTION__);
+    ALOGD("%s E", __FUNCTION__);
 
     status_t rc = NO_ERROR;
     int quality = params.getInt(CameraParameters::KEY_JPEG_QUALITY);
@@ -5114,7 +5114,7 @@ status_t SemcCameraHardware::setJpegQuality(const CameraParameters& params,
     if (quality > 0 && quality <= 100) {
         mParameters.set(CameraParameters::KEY_JPEG_QUALITY, quality);
     } else {
-        LOGE("Invalid jpeg quality=%d", quality);
+        ALOGE("Invalid jpeg quality=%d", quality);
         rc = BAD_VALUE;
     }
 
@@ -5122,10 +5122,10 @@ status_t SemcCameraHardware::setJpegQuality(const CameraParameters& params,
     if (quality > 0 && quality <= 100) {
         mParameters.set(CameraParameters::KEY_JPEG_THUMBNAIL_QUALITY, quality);
     } else {
-        LOGE("Invalid jpeg thumbnail quality=%d", quality);
+        ALOGE("Invalid jpeg thumbnail quality=%d", quality);
         rc = BAD_VALUE;
     }
-    LOGD("%s X", __FUNCTION__);
+    ALOGD("%s X", __FUNCTION__);
     return rc;
 }
 status_t SemcCameraHardware::setZoom(const CameraParameters& params,
@@ -5134,7 +5134,7 @@ status_t SemcCameraHardware::setZoom(const CameraParameters& params,
                                                 int int_value /* = -1 */,
                                                 bool collective /* = false */)
 {
-    LOGD("%s E", __FUNCTION__);
+    ALOGD("%s E", __FUNCTION__);
 
     status_t rc = NO_ERROR;
     int step_value = params.getInt(CameraParameters::KEY_ZOOM);
@@ -5142,7 +5142,7 @@ status_t SemcCameraHardware::setZoom(const CameraParameters& params,
     if(key != NULL) {
         step_value = int_value;
     }
-    LOGD("%s Provided step %d", __FUNCTION__, step_value);
+    ALOGD("%s Provided step %d", __FUNCTION__, step_value);
     if(1>step_value){
         step_value = 1;
     }
@@ -5150,16 +5150,16 @@ status_t SemcCameraHardware::setZoom(const CameraParameters& params,
     {
       if(native_step_zoom(mCameraControlFd, step_value) == false)
       {
-         LOGE("END setZoom : native_step_zoom is error.");
+         ALOGE("END setZoom : native_step_zoom is error.");
          return UNKNOWN_ERROR;
       }
      }
      mZoom = step_value;
 
 
-    LOGD("%s ZOOM VALUE = %d", __FUNCTION__, mZoom);
+    ALOGD("%s ZOOM VALUE = %d", __FUNCTION__, mZoom);
 
-    LOGD("%s X", __FUNCTION__);
+    ALOGD("%s X", __FUNCTION__);
     return rc;
 }
 
@@ -5170,7 +5170,7 @@ status_t SemcCameraHardware::setEffect(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setEffect : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setEffect : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -5187,14 +5187,14 @@ status_t SemcCameraHardware::setEffect(const CameraParameters& params,
         if(true == mPreviewFlag) {
             if((strcmp(mEffect, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_EFFECT, sizeof(value), (void *)&value)) {
-                    LOGD("END setEffect : native_set_parm(CAMERA_SET_PARM_EFFECT) : ERROR");
+                    ALOGD("END setEffect : native_set_parm(CAMERA_SET_PARM_EFFECT) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mEffect, str);
                 }
             }else{
-                LOGD("setEffect : Effect has already been setting.");
+                ALOGD("setEffect : Effect has already been setting.");
             }
         }
 
@@ -5205,10 +5205,10 @@ status_t SemcCameraHardware::setEffect(const CameraParameters& params,
             mParameters.set(CameraParameters::KEY_EFFECT, int_value);
         }
 
-        LOGD("END setEffect : NO_ERROR");
+        ALOGD("END setEffect : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setEffect : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
+    ALOGD("END setEffect : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
     return BAD_VALUE;
 }
 
@@ -5219,7 +5219,7 @@ status_t SemcCameraHardware::setAutoExposure(const CameraParameters& params,
                                                  bool collective /* = false */)
 
 {
-    LOGD("START setAutoExposure : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setAutoExposure : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -5236,14 +5236,14 @@ status_t SemcCameraHardware::setAutoExposure(const CameraParameters& params,
         if(true == mPreviewFlag){
             if((strcmp(mAutoExposure, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_EXPOSURE, sizeof(value), (void *)&value)) {
-                    LOGD("END setAutoExposure : native_set_parm(CAMERA_SET_PARM_EXPOSURE) : ERROR");
+                    ALOGD("END setAutoExposure : native_set_parm(CAMERA_SET_PARM_EXPOSURE) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mAutoExposure, str);
                 }
             }else{
-                LOGD("setAutoExposure : Auto Exposure has already been setting.");
+                ALOGD("setAutoExposure : Auto Exposure has already been setting.");
             }
         }
         //ParametersClass setting.
@@ -5252,49 +5252,49 @@ status_t SemcCameraHardware::setAutoExposure(const CameraParameters& params,
         }else{
             mParameters.set(CameraParameters::KEY_AUTO_EXPOSURE, int_value);
         }
-        LOGD("END setAutoExposure : NO_ERROR");
+        ALOGD("END setAutoExposure : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setAutoExposure : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setAutoExposure : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
 
     return BAD_VALUE;
 }
 
 status_t SemcCameraHardware::setSharpness(const CameraParameters& params)
 {
-    LOGD("START setSharpness");
+    ALOGD("START setSharpness");
     int sharpness = params.getInt(CameraParameters::KEY_SHARPNESS);
     mParameters.set(CameraParameters::KEY_SHARPNESS, sharpness);
-    LOGD("END setSharpness : NO_ERROR");
+    ALOGD("END setSharpness : NO_ERROR");
     return NO_ERROR;
 
 }
 
 status_t SemcCameraHardware::setContrast(const CameraParameters& params)
 {
-    LOGD("START setContrast");
+    ALOGD("START setContrast");
     int contrast = params.getInt(CameraParameters::KEY_CONTRAST);
     mParameters.set(CameraParameters::KEY_CONTRAST, contrast);
-    LOGD("END setContrast : NO_ERROR");
+    ALOGD("END setContrast : NO_ERROR");
     return NO_ERROR;
 
 }
 
 status_t SemcCameraHardware::setSaturation(const CameraParameters& params)
 {
-    LOGD("START setSaturation");
+    ALOGD("START setSaturation");
     int saturation = params.getInt(CameraParameters::KEY_SATURATION);
     mParameters.set(CameraParameters::KEY_SATURATION, saturation);
-    LOGD("END setSaturation : NOERROR");
+    ALOGD("END setSaturation : NOERROR");
     return NO_ERROR;
 
 }
 
 status_t SemcCameraHardware::setBrightness(const CameraParameters& params) {
-    LOGD("START setBrightness");
+    ALOGD("START setBrightness");
     int brightness = params.getInt("luma-adaptation");
     mParameters.set("luma-adaptation", brightness);
-    LOGD("END setBrightness : NOERROR");
+    ALOGD("END setBrightness : NOERROR");
     return NO_ERROR;
 
 }
@@ -5306,7 +5306,7 @@ status_t SemcCameraHardware::setWhiteBalance(const CameraParameters& params,
                                                  bool collective /* = false */)
 
 {
-    LOGD("START setWhiteBalance : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setWhiteBalance : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -5320,18 +5320,18 @@ status_t SemcCameraHardware::setWhiteBalance(const CameraParameters& params,
     }
     int32_t value = attr_lookup(whitebalance, sizeof(whitebalance) / sizeof(str_map), str, int_value);
     if(value != NOT_FOUND) {
-        LOGD("%s preview flag %s", __FUNCTION__, mPreviewFlag?"TRUE":"FALSE");
+        ALOGD("%s preview flag %s", __FUNCTION__, mPreviewFlag?"TRUE":"FALSE");
         if(true == mPreviewFlag){
             if((strcmp(mWhitebalance, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_WB, sizeof(value), (void *)&value)) {
-                    LOGD("END setWhiteBalance : native_set_parm(CAMERA_SET_PARM_WB) : ERROR");
+                    ALOGD("END setWhiteBalance : native_set_parm(CAMERA_SET_PARM_WB) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mWhitebalance, str);
                 }
             }else{
-                LOGD("setWhiteBalance :WhiteBalance has already been setting.");
+                ALOGD("setWhiteBalance :WhiteBalance has already been setting.");
             }
         }
         //ParametersClass setting.
@@ -5340,10 +5340,10 @@ status_t SemcCameraHardware::setWhiteBalance(const CameraParameters& params,
         }else{
             mParameters.set(CameraParameters::KEY_WHITE_BALANCE, int_value);
         }
-        LOGD("END setWhiteBalance : NO_ERROR");
+        ALOGD("END setWhiteBalance : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setWhiteBalance : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setWhiteBalance : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
 
     return BAD_VALUE;
 }
@@ -5355,7 +5355,7 @@ status_t SemcCameraHardware::setFlash(const CameraParameters& params)
     const char *str = params.get(CameraParameters::KEY_FLASH_MODE);
     mParameters.set(CameraParameters::KEY_FLASH_MODE, str);
 
-    LOGD("flash mode value: %s", (str == NULL) ? "NULL" : str);
+    ALOGD("flash mode value: %s", (str == NULL) ? "NULL" : str);
 
     if (str != NULL) {
        int32_t value = attr_lookup(flash, sizeof(flash) / sizeof(str_map), str);
@@ -5365,7 +5365,7 @@ status_t SemcCameraHardware::setFlash(const CameraParameters& params)
        }
        return NO_ERROR;
     }
-    LOGD("Invalid flash mode value: %s", (str == NULL) ? "NULL" : str);
+    ALOGD("Invalid flash mode value: %s", (str == NULL) ? "NULL" : str);
     return BAD_VALUE;
 
 }
@@ -5376,7 +5376,7 @@ status_t SemcCameraHardware::setAntibanding(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setAntibanding : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setAntibanding : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -5393,14 +5393,14 @@ status_t SemcCameraHardware::setAntibanding(const CameraParameters& params,
         if(true == mPreviewFlag) {
             if((strcmp(mAntibanding, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_ANTIBANDING, sizeof(value), (void *)&value)) {
-                    LOGD("END setAntibanding : native_set_parm(CAMERA_SET_PARM_ANTIBANDING) : ERROR");
+                    ALOGD("END setAntibanding : native_set_parm(CAMERA_SET_PARM_ANTIBANDING) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mAntibanding, str);
                 }
             }else{
-                LOGD("setAntibanding : Antibanding has already been setting.");
+                ALOGD("setAntibanding : Antibanding has already been setting.");
             }
         }
 
@@ -5411,28 +5411,28 @@ status_t SemcCameraHardware::setAntibanding(const CameraParameters& params,
             mParameters.set(CameraParameters::KEY_ANTIBANDING, int_value);
         }
 
-        LOGD("END setAntibanding : NO_ERROR");
+        ALOGD("END setAntibanding : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setAntibanding : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
+    ALOGD("END setAntibanding : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
     return BAD_VALUE;
 }
 
 status_t SemcCameraHardware::setLensshadeValue(const CameraParameters& params)
 {
-    LOGD("START setLensshadeValue");
+    ALOGD("START setLensshadeValue");
     const char *str = params.get(CameraParameters::KEY_LENSSHADE);
     mParameters.set(CameraParameters::KEY_LENSSHADE, str);
-    LOGD("END setLensshadeValue");
+    ALOGD("END setLensshadeValue");
     return NO_ERROR;
 
 }
 
 status_t  SemcCameraHardware::setISOValue(const CameraParameters& params) {
-    LOGD("START setISOValue");
+    ALOGD("START setISOValue");
     const char *str = params.get(CameraParameters::KEY_ISO_MODE);
     mParameters.set(CameraParameters::KEY_ISO_MODE, str);
-    LOGD("END setISOValue");
+    ALOGD("END setISOValue");
     return NO_ERROR;
 
 }
@@ -5514,7 +5514,7 @@ status_t SemcCameraHardware::setRotation(const CameraParameters& params,
                                                const char *str_value /* = NULL */,
                                                int int_value /* = -1 */)
 {
-    LOGD("START setRotation : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setRotation : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     status_t rc = NO_ERROR;
     int rotation = 0;
     if (NULL == key) {
@@ -5527,11 +5527,11 @@ status_t SemcCameraHardware::setRotation(const CameraParameters& params,
             || rotation == 270) {
           mParameters.set(CameraParameters::KEY_ROTATION, rotation);
         } else {
-            LOGE("Invalid rotation value: %d", rotation);
+            ALOGE("Invalid rotation value: %d", rotation);
             rc = BAD_VALUE;
         }
     }
-    LOGD("END setRotation : NO_ERROR");
+    ALOGD("END setRotation : NO_ERROR");
     return rc;
 }
 
@@ -5539,10 +5539,10 @@ status_t SemcCameraHardware::setRotation(const CameraParameters& params,
 //{
 //    status_t rc = NO_ERROR;
 //
-//    LOGD("START setZoom");
+//    ALOGD("START setZoom");
 //    int32_t zoom_level = params.getInt("zoom");
 //    mParameters.set("zoom", zoom_level);
-//    LOGD("END setZoom");
+//    ALOGD("END setZoom");
 //
 //    return rc;
 //}
@@ -5554,7 +5554,7 @@ status_t SemcCameraHardware::setFocusMode(const CameraParameters& params,
                                               bool collective /* = false */)
 
 {
-    LOGD("START setFocusMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setFocusMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
     int32_t value = NOT_FOUND;
 
@@ -5572,14 +5572,14 @@ status_t SemcCameraHardware::setFocusMode(const CameraParameters& params,
         if(true == mPreviewFlag){
             if((strcmp(mFocusMode, str) != 0) /*|| (true == collective)*/) {
                 if(true != native_set_parm(CAMERA_SET_PARM_AF_RANGE, sizeof(value), (void *)&value, DRV_TIMEOUT_10K)) {
-                    LOGD("END setFocusMode : native_set_parm(CAMERA_SET_PARM_AF_RANGE) : ERROR");
+                    ALOGD("END setFocusMode : native_set_parm(CAMERA_SET_PARM_AF_RANGE) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mFocusMode, str);
                 }
             }else{
-                LOGD("setFocusMode : Focus mode(AutoFocusRange) has already been setting.");
+                ALOGD("setFocusMode : Focus mode(AutoFocusRange) has already been setting.");
             }
         }
         //ParametersClass setting.
@@ -5588,10 +5588,10 @@ status_t SemcCameraHardware::setFocusMode(const CameraParameters& params,
         }else{
             mParameters.set(CameraParameters::KEY_FOCUS_MODE, int_value);
         }
-        LOGD("END setFocusMode : NO_ERROR");
+        ALOGD("END setFocusMode : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setFocusMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setFocusMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
 
     return BAD_VALUE;
 }
@@ -5605,7 +5605,7 @@ status_t SemcCameraHardware::setOrientation(const CameraParameters& params)
             // pictures should be rotated.
             mParameters.set(ORIENTATION, str);
         } else {
-            LOGD("Invalid orientation value: %s", str);
+            ALOGD("Invalid orientation value: %s", str);
             return BAD_VALUE;
         }
     }
@@ -5619,7 +5619,7 @@ status_t SemcCameraHardware::setOrientation(const CameraParameters& params,
                                                 bool collective /* = false */)
 
 {
-    LOGD("START setOrientation : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setOrientation : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -5642,20 +5642,20 @@ status_t SemcCameraHardware::setOrientation(const CameraParameters& params,
         }else{
             mParameters.setOrientation(int_value);
         }
-        LOGD("END setOrientation : NO_ERROR" );
+        ALOGD("END setOrientation : NO_ERROR" );
         return NO_ERROR;
     }
-    LOGD("END setOrientation : BAD_VALUE" );
+    ALOGD("END setOrientation : BAD_VALUE" );
     return BAD_VALUE;
 
 }
 #endif
 status_t SemcCameraHardware::setPictureFormat(const CameraParameters& params)
 {
-    LOGD("START setPictureFormat");
+    ALOGD("START setPictureFormat");
     const char * str = params.get(CameraParameters::KEY_PICTURE_FORMAT);
     mParameters.set(CameraParameters::KEY_PICTURE_FORMAT, str);
-    LOGD("END setPictureFormat");
+    ALOGD("END setPictureFormat");
 
     return NO_ERROR;
 }
@@ -5697,7 +5697,7 @@ SemcCameraHardware::AshmemPool::AshmemPool(int buffer_size, int num_buffers,
                                     frame_size,
                                     name)
 {
-    LOGV("constructing MemPool %s backed by ashmem: "
+    ALOGV("constructing MemPool %s backed by ashmem: "
          "%d frames @ %d uint8_ts, "
          "buffer size %d",
          mName,
@@ -5737,13 +5737,13 @@ SemcCameraHardware::PmemPool::PmemPool(const char *pmem_pool,
     mPmemType(pmem_type),
     mCameraControlFd(dup(camera_control_fd))
 {
-    LOGV("constructing MemPool %s backed by pmem pool %s: "
+    ALOGV("constructing MemPool %s backed by pmem pool %s: "
          "%d frames @ %d bytes, buffer size %d",
          mName,
          pmem_pool, num_buffers, frame_size,
          buffer_size);
 
-    LOGV("%s: duplicating control fd %d --> %d",
+    ALOGV("%s: duplicating control fd %d --> %d",
          __FUNCTION__,
          camera_control_fd, mCameraControlFd);
 
@@ -5757,7 +5757,7 @@ SemcCameraHardware::PmemPool::PmemPool(const char *pmem_pool,
         new MemoryHeapBase(pmem_pool, mAlignedSize, flags);
 
     if (masterHeap->getHeapID() < 0) {
-        LOGE("failed to construct master heap for pmem pool %s", pmem_pool);
+        ALOGE("failed to construct master heap for pmem pool %s", pmem_pool);
         masterHeap.clear();
         return;
     }
@@ -5771,30 +5771,30 @@ SemcCameraHardware::PmemPool::PmemPool(const char *pmem_pool,
 
         mFd = mHeap->getHeapID();
         if (::ioctl(mFd, PMEM_GET_SIZE, &mSize)) {
-            LOGE("pmem pool %s ioctl(PMEM_GET_SIZE) error %s (%d)",
+            ALOGE("pmem pool %s ioctl(PMEM_GET_SIZE) error %s (%d)",
                  pmem_pool,
                  ::strerror(errno), errno);
             mHeap.clear();
             return;
         }
 
-        LOGV("pmem pool %s ioctl(fd = %d, PMEM_GET_SIZE) is %ld",
+        ALOGV("pmem pool %s ioctl(fd = %d, PMEM_GET_SIZE) is %ld",
              pmem_pool,
              mFd,
              mSize.len);
-        LOGD("mBufferSize=%d, mAlignedBufferSize=%d\n", mBufferSize, mAlignedBufferSize);
+        ALOGD("mBufferSize=%d, mAlignedBufferSize=%d\n", mBufferSize, mAlignedBufferSize);
         // Unregister preview buffers with the camera drivers.  Allow the VFE to write
         // to all preview buffers except for the last one.
         // Only Register the preview, snapshot and thumbnail buffers with the kernel.
         if( (strcmp("postview", mName) != 0) ){
             int num_buf = num_buffers;
             if(!strcmp("preview", mName)) num_buf = kPreviewBufferCount;
-            LOGD("num_buffers = %d", num_buf);
+            ALOGD("num_buffers = %d", num_buf);
             for (int cnt = 0; cnt < num_buf; ++cnt) {
                 int active = 1;
                 if(pmem_type == MSM_PMEM_VIDEO){
                      active = (cnt<ACTIVE_VIDEO_BUFFERS);
-                     LOGV(" pmempool creating video buffers : active %d ", active);
+                     ALOGV(" pmempool creating video buffers : active %d ", active);
                 }
                 else if (pmem_type == MSM_PMEM_PREVIEW){
                      active = (cnt < ACTIVE_VIDEO_BUFFERS);
@@ -5808,7 +5808,7 @@ SemcCameraHardware::PmemPool::PmemPool(const char *pmem_pool,
                                pmem_type,
                                active);
                 if( true != ret ){
-                    LOGE("mHeap register_buf error active %d", active);
+                    ALOGE("mHeap register_buf error active %d", active);
                     mHeap.clear();
                     return;
                 }
@@ -5817,13 +5817,13 @@ SemcCameraHardware::PmemPool::PmemPool(const char *pmem_pool,
 
         completeInitialization();
     }
-    else LOGE("pmem pool %s error: could not create master heap!",
+    else ALOGE("pmem pool %s error: could not create master heap!",
               pmem_pool);
 }
 
 SemcCameraHardware::PmemPool::~PmemPool()
 {
-    LOGV("%s: %s E", __FUNCTION__, mName);
+    ALOGV("%s: %s E", __FUNCTION__, mName);
     if (mHeap != NULL) {
         // Unregister preview buffers with the camera drivers.
         //  Only Unregister the preview, snapshot and thumbnail
@@ -5844,20 +5844,20 @@ SemcCameraHardware::PmemPool::~PmemPool()
             }
         }
     }
-    LOGV("destroying PmemPool %s: closing control fd %d",
+    ALOGV("destroying PmemPool %s: closing control fd %d",
          mName,
          mCameraControlFd);
     close(mCameraControlFd);
-    LOGV("%s: %s X", __FUNCTION__, mName);
+    ALOGV("%s: %s X", __FUNCTION__, mName);
 }
 
 SemcCameraHardware::MemPool::~MemPool()
 {
-    LOGV("destroying MemPool %s", mName);
+    ALOGV("destroying MemPool %s", mName);
     if (mFrameSize > 0)
         delete [] mBuffers;
     mHeap.clear();
-    LOGV("destroying MemPool %s completed", mName);
+    ALOGV("destroying MemPool %s completed", mName);
 }
 
 static bool register_buf(int camfd,
@@ -5887,14 +5887,14 @@ static bool register_buf(int camfd,
 
     pmemBuf.active   = vfe_can_write;
 
-    LOGV("register_buf: camfd = %d, reg = %d buffer = %p",
+    ALOGV("register_buf: camfd = %d, reg = %d buffer = %p",
          camfd, !register_buffer, buf);
     if (ioctl(camfd,
               register_buffer ?
               MSM_CAM_IOCTL_REGISTER_PMEM :
               MSM_CAM_IOCTL_UNREGISTER_PMEM,
               &pmemBuf) < 0) {
-        LOGE("register_buf: MSM_CAM_IOCTL_(UN)REGISTER_PMEM fd %d error %s",
+        ALOGE("register_buf: MSM_CAM_IOCTL_(UN)REGISTER_PMEM fd %d error %s",
              camfd,
              strerror(errno));
         return false;
@@ -5937,34 +5937,34 @@ static void receive_camframe_callback(struct msm_frame *frame)
 
 static void receive_jpeg_fragment_callback(uint8_t *buff_ptr, uint32_t buff_size)
 {
-    LOGV("receive_jpeg_fragment_callback E");
+    ALOGV("receive_jpeg_fragment_callback E");
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
         obj->receiveJpegPictureFragment(buff_ptr, buff_size);
     }
-    LOGV("receive_jpeg_fragment_callback X");
+    ALOGV("receive_jpeg_fragment_callback X");
 }
 
 static void receive_jpeg_callback(jpeg_event_t status)
 {
-    LOGV("receive_jpeg_callback E (completion status %d)", status);
+    ALOGV("receive_jpeg_callback E (completion status %d)", status);
     if (status == JPEG_EVENT_DONE) {
         sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
         if (obj != 0) {
             obj->receiveJpegPicture();
         }
     }
-    LOGV("receive_jpeg_callback X");
+    ALOGV("receive_jpeg_callback X");
 }
 // 720p : video frame calbback from camframe
 static void receive_camframe_video_callback(struct msm_frame *frame)
 {
-    LOGV("receive_camframe_video_callback E");
+    ALOGV("receive_camframe_video_callback E");
     sp<SemcCameraHardware> obj = SemcCameraHardware::getInstance();
     if (obj != 0) {
 			obj->receiveRecordingFrame(frame);
 		 }
-    LOGV("receive_camframe_video_callback X");
+    ALOGV("receive_camframe_video_callback X");
 }
 
 void SemcCameraHardware::setCallbacks(notify_callback notify_cb,
@@ -6004,19 +6004,19 @@ bool SemcCameraHardware::useOverlay(void)
     } else
         mUseOverlay = false;
 
-    LOGV(" Using Overlay : %s ", mUseOverlay ? "YES" : "NO" );
+    ALOGV(" Using Overlay : %s ", mUseOverlay ? "YES" : "NO" );
     return mUseOverlay;
 }
 
 status_t SemcCameraHardware::setOverlay(const sp<Overlay> &Overlay)
 {
     if( Overlay != NULL) {
-        LOGV(" Valid overlay object ");
+        ALOGV(" Valid overlay object ");
         mOverlayLock.lock();
         mOverlay = Overlay;
         mOverlayLock.unlock();
     } else {
-        LOGE(" Overlay object NULL. returning ");
+        ALOGE(" Overlay object NULL. returning ");
         mOverlay = NULL;
         return UNKNOWN_ERROR;
     }
@@ -6024,11 +6024,11 @@ status_t SemcCameraHardware::setOverlay(const sp<Overlay> &Overlay)
 }
 
 void SemcCameraHardware::receive_camframetimeout(void) {
-    LOGV("receive_camframetimeout: E");
+    ALOGV("receive_camframetimeout: E");
     Mutex::Autolock l(&mCamframeTimeoutLock);
-    LOGD(" Camframe timed out. Not receiving any frames from camera driver ");
+    ALOGD(" Camframe timed out. Not receiving any frames from camera driver ");
     camframe_timeout_flag = true;
-    LOGD("receive_camframetimeout: X");
+    ALOGD("receive_camframetimeout: X");
 }
 
 static void receive_camframetimeout_callback(void) {
@@ -6039,62 +6039,62 @@ static void receive_camframetimeout_callback(void) {
 }
 
 void SemcCameraHardware::storePreviewFrameForPostview(void) {
-    LOGV(" storePreviewFrameForPostview : E ");
+    ALOGV(" storePreviewFrameForPostview : E ");
 
     /* Since there is restriction on the maximum overlay dimensions
      * that can be created, we use the last preview frame as postview
      * for 7x30. */
-    LOGV(" Copying the preview buffer to postview buffer %d  ",
+    ALOGV(" Copying the preview buffer to postview buffer %d  ",
          mPreviewFrameSize);
     if( mPostViewHeap != NULL && mLastQueuedFrame != NULL) {
 	memcpy(mPostViewHeap->mHeap->base(),
 		(uint8_t *)mLastQueuedFrame, mPreviewFrameSize );
     } else
-        LOGE(" Failed to store Preview frame. No Postview ");
+        ALOGE(" Failed to store Preview frame. No Postview ");
 
-    LOGV(" storePreviewFrameForPostview : X ");
+    ALOGV(" storePreviewFrameForPostview : X ");
 }
 
 status_t SemcCameraHardware::getBufferInfo(sp<IMemory>& Frame, size_t *alignedSize) {
     status_t ret;
-    LOGV(" getBufferInfo : E ");
+    ALOGV(" getBufferInfo : E ");
     if( ( mCurrentTarget == TARGET_MSM7630 ) || (mCurrentTarget == TARGET_QSD8250))
     {
         if( mRecordHeap != NULL){
-            LOGV(" Setting valid buffer information ");
+            ALOGV(" Setting valid buffer information ");
             Frame = mRecordHeap->mBuffers[0];
             if( alignedSize != NULL) {
                 *alignedSize = mRecordHeap->mAlignedBufferSize;
-                LOGV(" HAL : alignedSize = %d ", *alignedSize);
+                ALOGV(" HAL : alignedSize = %d ", *alignedSize);
                 ret = NO_ERROR;
             } else {
-                LOGE(" HAL : alignedSize is NULL. Cannot update alignedSize ");
+                ALOGE(" HAL : alignedSize is NULL. Cannot update alignedSize ");
                 ret = UNKNOWN_ERROR;
             }
         } else {
-            LOGE(" RecordHeap is null. Buffer information wont be updated ");
+            ALOGE(" RecordHeap is null. Buffer information wont be updated ");
             Frame = NULL;
             ret = UNKNOWN_ERROR;
         }
     } else {
         if(mPreviewHeap != NULL) {
-            LOGV(" Setting valid buffer information ");
+            ALOGV(" Setting valid buffer information ");
             Frame = mPreviewHeap->mBuffers[0];
             if( alignedSize != NULL) {
                 *alignedSize = mPreviewHeap->mAlignedBufferSize;
-                LOGV(" HAL : alignedSize = %d ", *alignedSize);
+                ALOGV(" HAL : alignedSize = %d ", *alignedSize);
                 ret = NO_ERROR;
             } else {
-                LOGE(" HAL : alignedSize is NULL. Cannot update alignedSize ");
+                ALOGE(" HAL : alignedSize is NULL. Cannot update alignedSize ");
                 ret = UNKNOWN_ERROR;
             }
         } else {
-            LOGE(" PreviewHeap is null. Buffer information wont be updated ");
+            ALOGE(" PreviewHeap is null. Buffer information wont be updated ");
             Frame = NULL;
             ret = UNKNOWN_ERROR;
         }
     }
-    LOGV(" getBufferInfo : X ");
+    ALOGV(" getBufferInfo : X ");
     return ret;
 }
 
@@ -6107,7 +6107,7 @@ status_t SemcCameraHardware::getBufferInfo(sp<IMemory>& Frame, size_t *alignedSi
  */
 void SemcCameraHardware::semcCameraExtensionJudgment(bool startflg)
 {
-    LOGD("START semcCameraExtensionJudgment: startflg =%d", startflg);
+    ALOGD("START semcCameraExtensionJudgment: startflg =%d", startflg);
     if(startflg){
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0)
         {
@@ -6117,7 +6117,7 @@ void SemcCameraHardware::semcCameraExtensionJudgment(bool startflg)
     else{
         mSemcCameraFlag = 0x00;
     }
-    LOGD("END semcCameraExtensionJudgment: mSemcCameraFlag =%d", mSemcCameraFlag);
+    ALOGD("END semcCameraExtensionJudgment: mSemcCameraFlag =%d", mSemcCameraFlag);
 
 }
 /**
@@ -6129,7 +6129,7 @@ void SemcCameraHardware::semcCameraExtensionJudgment(bool startflg)
 void SemcCameraHardware::semcCameraExtensionService()
 {
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0){
-        LOGD("START semcCameraExtensionService");
+        ALOGD("START semcCameraExtensionService");
         Mutex::Autolock l(&mLock);
         mSemcCameraFlag = mSemcCameraFlag << 1;
 
@@ -6140,7 +6140,7 @@ void SemcCameraHardware::semcCameraExtensionService()
         }
     }
 
-    LOGD("END semcCameraExtensionService");
+    ALOGD("END semcCameraExtensionService");
 }
 
 /**
@@ -6150,7 +6150,7 @@ void SemcCameraHardware::semcCameraExtensionService()
  */
 void SemcCameraHardware::setInitialValue(){
 
-    LOGD("START setInitialValue");
+    ALOGD("START setInitialValue");
     size_t i;
 #if SCRITCH_OFF
     struct get_versions_t hal_get_versions;
@@ -6158,7 +6158,7 @@ void SemcCameraHardware::setInitialValue(){
 
     
     native_get_firmware_version(mCameraControlFd, &hal_get_versions);
-    LOGD("setInitialValue:firmware_version = %s", hal_get_versions.firmware);
+    ALOGD("setInitialValue:firmware_version = %s", hal_get_versions.firmware);
     mParameters.set("firmware-version",hal_get_versions.firmware);
 #endif//SCRITCH_OFF
 
@@ -6176,7 +6176,7 @@ void SemcCameraHardware::setInitialValue(){
     mParameters.set(CameraParameters::KEY_SUPPORTED_SCENE_MODES,
                     scene_mode_values);
     mZoom = 1;
-    LOGD("END setInitialValue");
+    ALOGD("END setInitialValue");
 }
 
 #if SCRITCH_OFF
@@ -6185,13 +6185,13 @@ void SemcCameraHardware::setCallbacks(notify_callback notify_cb,
                                           data_callback_timestamp data_cb_timestamp,
                                           void* user)
 {
-    LOGD("START setCallbacks(SEMC)");
+    ALOGD("START setCallbacks(SEMC)");
     Mutex::Autolock lock(mLock);
     mNotifyCallback = notify_cb;
     mDataCallback = data_cb;
     mDataCallbackTimestamp = data_cb_timestamp;
     mCallbackCookie = user;
-    LOGD("END setCallbacks(SEMC)");
+    ALOGD("END setCallbacks(SEMC)");
 }
 
 #endif//SCRITCH_OFF
@@ -6203,7 +6203,7 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setSceneMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setSceneMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
     int framerate = 0;
     int32_t value = NOT_FOUND;
@@ -6216,7 +6216,7 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
     }else{
         //This root is setParameters(pkg) and setCollective setting
         str = params.get(CameraParameters::KEY_SCENE_MODE);
-        LOGD("setSceneMode : Get string name[%s] ]", str );
+        ALOGD("setSceneMode : Get string name[%s] ]", str );
 
     }
     value = attr_lookup(scene_mode, sizeof(scene_mode) / sizeof(str_map), str, int_value);
@@ -6225,7 +6225,7 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
         if(true == mPreviewFlag){
             if((strcmp(mSceneMode, str) != 0) || (strcmp(mKeyScene, CameraParameters::KEY_SCENE_MODE) != 0)){
                 if(true != native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE, sizeof(value), (void *)&value)) {
-                    LOGD("END native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE) : ERROR");
+                    ALOGD("END native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if((strcmp(str, CAMERA_DEFAULT_VALUE) != 0)) {
@@ -6247,21 +6247,21 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
                         strcpy(mWhitebalance, CameraParameters::WHITE_BALANCE_DAYLIGHT);
                         break;
                     default:
-                        LOGE("scene mode is not support parameter");
+                        ALOGE("scene mode is not support parameter");
                         break;
                 }
                 /* case 3rdparty */
                 if ( ((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0 ) {
                     if((CAMERAHAL_PREVIEW_FRAME_RATE_SET_FROM_FRAME_RATE == mFrameRateSetFrom) || (true == collective)) {
                         if(true != native_set_parm(CAMERA_SET_PARM_FPS, sizeof(framerate), (void *)&framerate)) {
-                            LOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
+                            ALOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
                             return UNKNOWN_ERROR;
                         }
                         mFrameRateSetFrom = CAMERAHAL_PREVIEW_FRAME_RATE_SET_FROM_SCENE;
                     }
                 }
             }else{
-                LOGD("%s Scene mode has already been set", __FUNCTION__);
+                ALOGD("%s Scene mode has already been set", __FUNCTION__);
                 
             }
         }
@@ -6271,10 +6271,10 @@ status_t SemcCameraHardware::setSceneMode(const CameraParameters& params,
         }else{
             mParameters.set(CameraParameters::KEY_SCENE_MODE, int_value);
         }
-        LOGD("END setSceneMode : NO_ERROR");
+        ALOGD("END setSceneMode : NO_ERROR");
         return NO_ERROR;
     //}
-    //LOGD("END setSceneMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    //ALOGD("END setSceneMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
 #if SCRITCH_OFF
@@ -6284,7 +6284,7 @@ status_t SemcCameraHardware::setSceneRecognition(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setSceneRecognition : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setSceneRecognition : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -6309,7 +6309,7 @@ status_t SemcCameraHardware::setSceneRecognition(const CameraParameters& params,
              || (strcmp(mKeyScene, CameraParameters::SCENE_RECOGNITION) != 0)
              || (true == collective)){
                 if(true != native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE, sizeof(value), (void *)&value)) {
-                    LOGD("END native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE) : ERROR");
+                    ALOGD("END native_set_parm(CAMERA_SET_PARM_BESTSHOT_MODE) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
@@ -6317,7 +6317,7 @@ status_t SemcCameraHardware::setSceneRecognition(const CameraParameters& params,
                 }
                 strcpy(mKeyScene, CameraParameters::SCENE_RECOGNITION);
             }else{
-                LOGD("setSceneRecognition :SceneRecognition has already been setting.");
+                ALOGD("setSceneRecognition :SceneRecognition has already been setting.");
             }
         }
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0) {
@@ -6328,10 +6328,10 @@ status_t SemcCameraHardware::setSceneRecognition(const CameraParameters& params,
                 mParameters.set(CameraParameters::SCENE_RECOGNITION, int_value);
             }
         }
-        LOGD("END setSceneRecognition : NO_ERROR");
+        ALOGD("END setSceneRecognition : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setSceneRecognition : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setSceneRecognition : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
 #endif //SCRITCH_OFF
@@ -6341,7 +6341,7 @@ status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& par
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setExposureCompensation : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setExposureCompensation : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -6358,14 +6358,14 @@ status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& par
         if(true == mPreviewFlag){
             if((strcmp(mExposureCompensation, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_EXPOSURE_COMPENSATION, sizeof(value), (void *)&value)) {
-                    LOGD("END setExposureCompensation : native_set_parm(CAMERA_SET_PARM_EXPOSURE_COMPENSATION) : ERROR");
+                    ALOGD("END setExposureCompensation : native_set_parm(CAMERA_SET_PARM_EXPOSURE_COMPENSATION) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mExposureCompensation, str);
                 }
             }else{
-                LOGD("setExposureCompensation :ExposureCompensation has already been setting.");
+                ALOGD("setExposureCompensation :ExposureCompensation has already been setting.");
             }
         }
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0) {
@@ -6376,10 +6376,10 @@ status_t SemcCameraHardware::setExposureCompensation(const CameraParameters& par
                 mParameters.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, int_value);
             }
         }
-        LOGD("END setExposureCompensation : NO_ERROR");
+        ALOGD("END setExposureCompensation : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setExposureCompensation : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setExposureCompensation : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
 
@@ -6389,7 +6389,7 @@ status_t SemcCameraHardware::setFramerate(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setFramerate : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setFramerate : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     int framerate = 0;
     if(NULL == key) {
         framerate = params.getPreviewFrameRate();
@@ -6406,7 +6406,7 @@ status_t SemcCameraHardware::setFramerate(const CameraParameters& params,
     }
     if(mFrameRate != framerate) {
         if(true != native_set_parm(CAMERA_SET_PARM_FPS, sizeof(framerate), (void *)&framerate)) {
-            LOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
+            ALOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
             return UNKNOWN_ERROR;
         }
         mFrameRate = framerate;
@@ -6420,23 +6420,23 @@ status_t SemcCameraHardware::setFramerate(const CameraParameters& params,
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0) {
             if((true == collective) && (CAMERAHAL_PREVIEW_FRAME_RATE_SET_FROM_FRAME_RATE == mFrameRateSetFrom)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_FPS, sizeof(framerate), (void *)&framerate)) {
-                    LOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
+                    ALOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 mFrameRate = framerate;
                 mFrameRateSetFrom = CAMERAHAL_PREVIEW_FRAME_RATE_SET_FROM_FRAME_RATE;
             }else{
-                LOGD("setFramerate : Framerate has already been setting or Set after setSceneMode");
+                ALOGD("setFramerate : Framerate has already been setting or Set after setSceneMode");
             }
         }else{
             if(true == collective) {
                 if(true != native_set_parm(CAMERA_SET_PARM_FPS, sizeof(framerate), (void *)&framerate)) {
-                    LOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
+                    ALOGD("END native_set_parm(CAMERA_SET_PARM_FPS) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 mFrameRate = framerate;
             }else{
-                LOGD("setFramerate : Framerate has already been setting.");
+                ALOGD("setFramerate : Framerate has already been setting.");
             }
         }
     }
@@ -6444,13 +6444,13 @@ status_t SemcCameraHardware::setFramerate(const CameraParameters& params,
         mParameters.setPreviewFrameRate(framerate);
     }
 
-    LOGD("END setFramerate : ret[NO_ERROR]" );
+    ALOGD("END setFramerate : ret[NO_ERROR]" );
     return NO_ERROR;
 }
 
 status_t SemcCameraHardware::setPreviewFpsRange(const CameraParameters& params)
 {
-    LOGD("START setPreviewFpsRange");
+    ALOGD("START setPreviewFpsRange");
     int min_fps=-1, max_fps=-1;
     params.getPreviewFpsRange(&min_fps, &max_fps);
     char str[32];
@@ -6471,7 +6471,7 @@ status_t SemcCameraHardware::setAfMode(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setAfMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setAfMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -6488,14 +6488,14 @@ status_t SemcCameraHardware::setAfMode(const CameraParameters& params,
         if((true == mPreviewFlag) && (strcmp(mCafMode, CameraParameters::CAF_MODE_OFF) == 0)) {
             if((strcmp(mAfMode, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_AF_FRAME, sizeof(value), (void *)&value, DRV_TIMEOUT_10K)) {
-                    LOGD("END setAfMode : native_set_parm(CAMERA_SET_PARM_AF_FRAME) : ERROR");
+                    ALOGD("END setAfMode : native_set_parm(CAMERA_SET_PARM_AF_FRAME) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if((strcmp(str, CAMERA_DEFAULT_VALUE) != 0)) {
                     strcpy(mAfMode, str);
                 }
             }else{
-                LOGD("setAfMode : Af mode has already been setting.");
+                ALOGD("setAfMode : Af mode has already been setting.");
             }
         }
 
@@ -6509,10 +6509,10 @@ status_t SemcCameraHardware::setAfMode(const CameraParameters& params,
             }
         }
 
-        LOGD("END setAfMode : NO_ERROR");
+        ALOGD("END setAfMode : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setAfMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
+    ALOGD("END setAfMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
     return BAD_VALUE;
 }
 
@@ -6522,7 +6522,7 @@ status_t SemcCameraHardware::setCAFMode(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setCAFMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setCAFMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
     int ret = NOT_FOUND;
 
@@ -6541,28 +6541,28 @@ status_t SemcCameraHardware::setCAFMode(const CameraParameters& params,
             if(true == mPreviewFlag) {
                 if((strcmp(mCafMode, str) != 0) || (true == collective)) {
                     if(true != native_set_parm(CAMERA_SET_PARM_CAF_MODE, sizeof(value), (void *)&value, DRV_TIMEOUT_10K)) {
-                        LOGD("END setCafMode : native_set_parm(CAMERA_SET_PARM_CAF_MODE) : ERROR");
+                        ALOGD("END setCafMode : native_set_parm(CAMERA_SET_PARM_CAF_MODE) : ERROR");
                         return UNKNOWN_ERROR;
                     }
                     if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                         strcpy(mCafMode, str);
                     }
                     if(strcmp(mCafMode, CameraParameters::CAF_MODE_OFF) == 0) {
-                        LOGD("setCAFMode : The setup of AF Mode,Focus Mode after CAF_OFF is set up ");
+                        ALOGD("setCAFMode : The setup of AF Mode,Focus Mode after CAF_OFF is set up ");
                         //af mode setting
                         strcpy(mAfMode, CAMERA_DEFAULT_VALUE);
                         if(setAfMode(mParameters) != NO_ERROR) {
-                            LOGD("setCAFMode : setAfMode(mParameters) : ERROR");
+                            ALOGD("setCAFMode : setAfMode(mParameters) : ERROR");
                         }
 
                         //af range setting
                         strcpy(mFocusMode, CAMERA_DEFAULT_VALUE);
                         if(setFocusMode(mParameters) != NO_ERROR) {
-                            LOGD("setCAFMode : setFocusMode(mParameters) : ERROR");
+                            ALOGD("setCAFMode : setFocusMode(mParameters) : ERROR");
                         }
                     }
                 } else {
-                    LOGD("setCafMode : Caf mode has already been setting.");
+                    ALOGD("setCafMode : Caf mode has already been setting.");
                 }
             }
             //ParametersClass setting.
@@ -6572,10 +6572,10 @@ status_t SemcCameraHardware::setCAFMode(const CameraParameters& params,
                 mParameters.set(CameraParameters::CAF_MODE, int_value);
             }
         }
-        LOGD("END setCafMode : NO_ERROR");
+        ALOGD("END setCafMode : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setCAFMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
+    ALOGD("END setCAFMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
     return BAD_VALUE;
 }
 
@@ -6585,7 +6585,7 @@ status_t SemcCameraHardware::setHandJitterReduction(const CameraParameters& para
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setHandJitterReduction : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setHandJitterReduction : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -6602,14 +6602,14 @@ status_t SemcCameraHardware::setHandJitterReduction(const CameraParameters& para
         if(true == mPreviewFlag){
             if((strcmp(mHJR, str) != 0) || (true == collective)) {
                 if(true != native_set_parm(CAMERA_SET_PARM_HJR, sizeof(value), (void *)&value)) {
-                    LOGD("END setHandJitterReduction : native_set_parm(CAMERA_SET_PARM_HJR) : ERROR");
+                    ALOGD("END setHandJitterReduction : native_set_parm(CAMERA_SET_PARM_HJR) : ERROR");
                     return UNKNOWN_ERROR;
                 }
                 if(strcmp(str, CAMERA_DEFAULT_VALUE) != 0) {
                     strcpy(mHJR, str);
                 }
             }else{
-                LOGD("setHandJitterReduction : Antibanding mode has already been setting.");
+                ALOGD("setHandJitterReduction : Antibanding mode has already been setting.");
             }
         }
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0) {
@@ -6620,10 +6620,10 @@ status_t SemcCameraHardware::setHandJitterReduction(const CameraParameters& para
                 mParameters.set(CameraParameters::HJR_MODE, int_value);
             }
         }
-        LOGD("END setHandJitterReduction : NO_ERROR");
+        ALOGD("END setHandJitterReduction : NO_ERROR");
         return NO_ERROR;
     }
-    LOGD("END setHandJitterReduction : BAD_VALUE" );
+    ALOGD("END setHandJitterReduction : BAD_VALUE" );
     return BAD_VALUE;
 }
 status_t SemcCameraHardware::setSmileMode(const CameraParameters& params,
@@ -6632,7 +6632,7 @@ status_t SemcCameraHardware::setSmileMode(const CameraParameters& params,
                                               int int_value /* = -1 */,
                                               bool collective /* = false */)
 {
-    LOGD("START setSmileMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setSmileMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -6654,10 +6654,10 @@ status_t SemcCameraHardware::setSmileMode(const CameraParameters& params,
                 mParameters.set(CameraParameters::SMILE_MODE, int_value);
             }
         }
-        LOGD("END setSmileMode : NO_ERROR" );
+        ALOGD("END setSmileMode : NO_ERROR" );
         return NO_ERROR;
     }
-    LOGD("END setSmileMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setSmileMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
 status_t SemcCameraHardware::setFacedetectMode(const CameraParameters& params,
@@ -6666,7 +6666,7 @@ status_t SemcCameraHardware::setFacedetectMode(const CameraParameters& params,
                                              int int_value /* = -1 */,
                                              bool collective /* = false */)
 {
-    LOGD("START setFacedetectMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setFacedetectMode : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     const char *str = CAMERA_DEFAULT_VALUE;
 
     if(key != NULL){
@@ -6688,10 +6688,10 @@ status_t SemcCameraHardware::setFacedetectMode(const CameraParameters& params,
                 mParameters.set(CameraParameters::FACE_MODE, int_value);
             }
         }
-        LOGD("END setFacedetectMode : NO_ERROR" );
+        ALOGD("END setFacedetectMode : NO_ERROR" );
         return NO_ERROR;
     }
-    LOGD("END setFacedetectMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
+    ALOGD("END setFacedetectMode : BAD_VALUE str[%s] int_value[%d]",str ,int_value );
     return BAD_VALUE;
 }
 
@@ -6701,21 +6701,21 @@ status_t SemcCameraHardware::setGpsLatitude(const CameraParameters& params,
                                                   const char *str_value /* = NULL */,
                                                   int int_value /* = -1 */)
 {
-    LOGD("START setGpsLatitude : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsLatitude : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_LATITUDE, str_value);
         } else {
-            LOGW("END setGpsLatitude : BAD_VALUE str_value is null");
+            ALOGW("END setGpsLatitude : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsLatitude : BAD_VALUE key is null");
+        ALOGW("END setGpsLatitude : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsLatitude : NO_ERROR" );
+    ALOGD("END setGpsLatitude : NO_ERROR" );
     return NO_ERROR;
 }
 
@@ -6724,21 +6724,21 @@ status_t SemcCameraHardware::setGpsLatitudeRef(const CameraParameters& params,
                                                      const char *str_value /* = NULL */,
                                                      int int_value /* = -1 */)
 {
-    LOGD("START setGpsLatitudeRef : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsLatitudeRef : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_LATITUDE_REF, str_value);
         } else {
-            LOGW("END setGpsLatitudeRef : BAD_VALUE str_value is null");
+            ALOGW("END setGpsLatitudeRef : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsLatitudeRef : BAD_VALUE key is null");
+        ALOGW("END setGpsLatitudeRef : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsLatitudeRef : NO_ERROR" );
+    ALOGD("END setGpsLatitudeRef : NO_ERROR" );
     return NO_ERROR;
 }
 status_t SemcCameraHardware::setGpsLongitude(const CameraParameters& params,
@@ -6746,21 +6746,21 @@ status_t SemcCameraHardware::setGpsLongitude(const CameraParameters& params,
                                                    const char *str_value /* = NULL */,
                                                    int int_value /* = -1 */)
 {
-    LOGD("START setGpsLongitude : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsLongitude : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_LONGITUDE, str_value);
         } else {
-            LOGW("END setGpsLongitude : BAD_VALUE str_value is null");
+            ALOGW("END setGpsLongitude : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsLongitude : BAD_VALUE key is null");
+        ALOGW("END setGpsLongitude : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsLongitude : NO_ERROR" );
+    ALOGD("END setGpsLongitude : NO_ERROR" );
     return NO_ERROR;
 }
 
@@ -6769,21 +6769,21 @@ status_t SemcCameraHardware::setGpsLongitudeRef(const CameraParameters& params,
                                                       const char *str_value /* = NULL */,
                                                       int int_value /* = -1 */)
 {
-    LOGD("START setGpsLongitudeRef : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsLongitudeRef : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_LONGITUDE_REF, str_value);
         } else {
-            LOGW("END setGpsLongitudeRef : BAD_VALUE str_value is null");
+            ALOGW("END setGpsLongitudeRef : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsLongitudeRef : BAD_VALUE key is null");
+        ALOGW("END setGpsLongitudeRef : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsLongitudeRef : NO_ERROR" );
+    ALOGD("END setGpsLongitudeRef : NO_ERROR" );
     return NO_ERROR;
 }
 status_t SemcCameraHardware::setGpsAltitude(const CameraParameters& params,
@@ -6791,21 +6791,21 @@ status_t SemcCameraHardware::setGpsAltitude(const CameraParameters& params,
                                                   const char *str_value /* = NULL */,
                                                   int int_value /* = -1 */)
 {
-    LOGD("START setGpsAltitude : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsAltitude : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_ALTITUDE, str_value);
         } else {
-            LOGW("END setGpsAltitude : BAD_VALUE str_value is null");
+            ALOGW("END setGpsAltitude : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsAltitude : BAD_VALUE key is null");
+        ALOGW("END setGpsAltitude : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsAltitude : NO_ERROR" );
+    ALOGD("END setGpsAltitude : NO_ERROR" );
     return NO_ERROR;
 }
 
@@ -6814,21 +6814,21 @@ status_t SemcCameraHardware::setGpsAltitudeRef(const CameraParameters& params,
                                                      const char *str_value /* = NULL */,
                                                      int int_value /* = -1 */)
 {
-    LOGD("START setGpsAltitudeRef : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsAltitudeRef : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_ALTITUDE_REF, str_value);
         } else {
-            LOGW("END setGpsAltitudeRef : BAD_VALUE str_value is null");
+            ALOGW("END setGpsAltitudeRef : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsAltitudeRef : BAD_VALUE key is null");
+        ALOGW("END setGpsAltitudeRef : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsAltitudeRef : NO_ERROR" );
+    ALOGD("END setGpsAltitudeRef : NO_ERROR" );
     return NO_ERROR;
 }
 
@@ -6837,21 +6837,21 @@ status_t SemcCameraHardware::setGpsStatus(const CameraParameters& params,
                                                 const char *str_value /* = NULL */,
                                                 int int_value /* = -1 */)
 {
-    LOGD("START setGpsStatus : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setGpsStatus : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::KEY_GPS_STATUS, str_value);
         } else {
-            LOGW("END setGpsStatus : BAD_VALUE str_value is null");
+            ALOGW("END setGpsStatus : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setGpsStatus : BAD_VALUE key is null");
+        ALOGW("END setGpsStatus : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setGpsStatus : NO_ERROR" );
+    ALOGD("END setGpsStatus : NO_ERROR" );
     return NO_ERROR;
 }
 
@@ -6861,21 +6861,21 @@ status_t SemcCameraHardware::setFaceDetection(const CameraParameters& params,
                                                     const char *str_value /* = NULL */,
                                                     int int_value /* = -1 */)
 {
-    LOGD("START setFaceDetection : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setFaceDetection : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
 
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::FACE_DETECTION, str_value);
         } else {
-            LOGW("END setFaceDetection : BAD_VALUE str_value is null");
+            ALOGW("END setFaceDetection : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setFaceDetection : BAD_VALUE key is null");
+        ALOGW("END setFaceDetection : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setFaceDetection : NO_ERROR" );
+    ALOGD("END setFaceDetection : NO_ERROR" );
     return NO_ERROR;
 }
 
@@ -6885,20 +6885,20 @@ status_t SemcCameraHardware::setFlashStatus(const CameraParameters& params,
                                                   int int_value /* = -1 */)
 
 {
-    LOGD("START setFlashStatus : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
+    ALOGD("START setFlashStatus : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value );
     if (key != NULL) {
         if (str_value != NULL) {
             /* This root is Sinagature apl string string setting */
             mParameters.set(CameraParameters::FLASH_STATUS, str_value);
         } else {
-            LOGW("END setFlashStatus : BAD_VALUE str_value is null");
+            ALOGW("END setFlashStatus : BAD_VALUE str_value is null");
             return BAD_VALUE;
         }
     } else {
-        LOGW("END setFlashStatus : BAD_VALUE key is null");
+        ALOGW("END setFlashStatus : BAD_VALUE key is null");
         return BAD_VALUE;
     }
-    LOGD("END setFlashStatus : NO_ERROR" );
+    ALOGD("END setFlashStatus : NO_ERROR" );
     return NO_ERROR;
 }
 status_t SemcCameraHardware::setFlashlightBrightness(const CameraParameters& params,
@@ -6906,7 +6906,7 @@ status_t SemcCameraHardware::setFlashlightBrightness(const CameraParameters& par
                                                    const char *str_value /* = NULL */,
                                                    int int_value /* = -1 */)
 {
-    LOGD("START setFlashlightBrightness : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value);
+    ALOGD("START setFlashlightBrightness : key[%s] str_value[%s] int_value[%d]",key, str_value, int_value);
     int nwr = TALLY_VALUE_INIT, ret = TALLY_VALUE_INIT,
         fd = TALLY_VALUE_INIT, brightness = TALLY_VALUE_INIT;
     char value[CAMERA_STRING_VALUE_MAXLEN] = "";
@@ -6929,13 +6929,13 @@ status_t SemcCameraHardware::setFlashlightBrightness(const CameraParameters& par
     }else if((strcmp(str, CameraParameters::TALLY_LIGHT_STRONG) == 0)){
         brightness = TALLY_VALUE_STRONG;
     }else{
-        LOGE("END setFlashlightBrightness : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
+        ALOGE("END setFlashlightBrightness : BAD_VALUE str[%s] int_value[%d]",str ,int_value);
         return BAD_VALUE;
     }
 
     fd = open(FLASHLIGHT, O_RDWR);
     if(fd < 0){
-        LOGE("END setFlashlightBrightness : failed to open '%s', errno = %s", FLASHLIGHT, strerror(errno));
+        ALOGE("END setFlashlightBrightness : failed to open '%s', errno = %s", FLASHLIGHT, strerror(errno));
         return UNKNOWN_ERROR;
     }
 
@@ -6944,12 +6944,12 @@ status_t SemcCameraHardware::setFlashlightBrightness(const CameraParameters& par
     close(fd);
 
     if(ret != nwr){
-        LOGE("END setFlashlightBrightness : write error");
+        ALOGE("END setFlashlightBrightness : write error");
         return UNKNOWN_ERROR;
     }
     mParameters.set(CameraParameters::TALLY_LIGHT, str);
 
-    LOGD("END setFlashlightBrightness : NO_ERROR");
+    ALOGD("END setFlashlightBrightness : NO_ERROR");
     return NO_ERROR;
 }
 #endif//SCRITCH_OFF
@@ -6976,7 +6976,7 @@ status_t SemcCameraHardware::setJpegThumbnailSize(const CameraParameters& params
  */
 void SemcCameraHardware::setCollective()
 {
-    LOGD("START setCollective");
+    ALOGD("START setCollective");
 
     Mutex::Autolock l(&mLock);
 
@@ -6986,12 +6986,12 @@ void SemcCameraHardware::setCollective()
         setCollective3rdParty();
     }
 
-    LOGD("END setCollective");
+    ALOGD("END setCollective");
 }
 
 void SemcCameraHardware::setCollectiveSignature()
 {
-    LOGD("START setCollectiveSignature");
+    ALOGD("START setCollectiveSignature");
     int value = 0;
     int ioctlRetVal = true;
 
@@ -7000,7 +7000,7 @@ void SemcCameraHardware::setCollectiveSignature()
     if(strcmp(str, CameraParameters::RECOGNITION_STOP) == 0) {
         //Scene setting
         if(setSceneMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-            LOGE("setCollectiveSignature setSceneMode is error.");
+            ALOGE("setCollectiveSignature setSceneMode is error.");
         }else{
             strcpy(mKeyScene, CameraParameters::KEY_SCENE_MODE);
         }
@@ -7008,144 +7008,144 @@ void SemcCameraHardware::setCollectiveSignature()
         if(!mAfterTakepictureFlag) {
             //HandJitterReduction mode setting
             if(setHandJitterReduction(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-                LOGE("setCollectiveSignature setHandJitterReduction is error.");
+                ALOGE("setCollectiveSignature setHandJitterReduction is error.");
             }
         }else{
-            LOGV("setCollectiveSignature a set after the takepicture is skipped.");
+            ALOGV("setCollectiveSignature a set after the takepicture is skipped.");
         }
 
         //zoom setting
         if(native_step_zoom(mCameraControlFd, mZoom) == false){
-            LOGE("setCollectiveSignature native_step_zoom is error.");
+            ALOGE("setCollectiveSignature native_step_zoom is error.");
         }
 
         //As for the case except the AUTO, WB and AutoExposure become the most suitable value the SceneMode
         if(strcmp(mSceneMode, CameraParameters::SCENE_MODE_AUTO) == 0) {
             //Whitebalance setting
             if(setWhiteBalance(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-                LOGE("setCollectiveSignature setWhiteBalance is error.");
+                ALOGE("setCollectiveSignature setWhiteBalance is error.");
             }
 
             //Auto Exposure(exposure metering) settig
             if(setAutoExposure(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-                LOGE("setCollectiveSignature setAutoExposure is error.");
+                ALOGE("setCollectiveSignature setAutoExposure is error.");
             }
         }
 
         //Exposure Compensation setting
         if(setExposureCompensation(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-            LOGE("setCollectiveSignature setExposureCompensation is error.");
+            ALOGE("setCollectiveSignature setExposureCompensation is error.");
         }
 
         value = 0;
         if(!mAfterTakepictureFlag){
             //Framerate setting : FrameRate setting becomes variable in the case of "0"
             if(setFramerate(mParameters, CameraParameters::KEY_PREVIEW_FRAME_RATE, NULL, value, true) != NO_ERROR) {
-                LOGE("setCollectiveSignature setFramerate is error.");
+                ALOGE("setCollectiveSignature setFramerate is error.");
             }
         }else{
-            LOGV("setCollectiveSignature a set after the takepicture is skipped.");
+            ALOGV("setCollectiveSignature a set after the takepicture is skipped.");
         }
     }else{
         //Scene Recognition setting
         if(strcmp(str, CameraParameters::RECOGNITION_AUTO) != 0) {
             if(setSceneRecognition(mParameters, CameraParameters::SCENE_RECOGNITION, CameraParameters::RECOGNITION_AUTO, -1, true) != NO_ERROR) {
-                LOGE("END setCollectiveSignature : setSceneRecognition(RECOGNITION_AUTO) is error.");
+                ALOGE("END setCollectiveSignature : setSceneRecognition(RECOGNITION_AUTO) is error.");
                 return;
             }
         }
         if(setSceneRecognition(mParameters, CameraParameters::SCENE_RECOGNITION, str, -1, true) != 0) {
-            LOGE("END setCollectiveSignature : setSceneRecognition is error.");
+            ALOGE("END setCollectiveSignature : setSceneRecognition is error.");
             return;
         }
 
         //zoom setting
         if(native_step_zoom(mCameraControlFd, mZoom) == false){
-            LOGE("setCollectiveSignature native_step_zoom is error.");
+            ALOGE("setCollectiveSignature native_step_zoom is error.");
         }
     }
 
 #if SCRITCH_OFF
     //AF Mode setting
     if(setAfMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollectiveSignature setAfMode is error.");
+        ALOGE("setCollectiveSignature setAfMode is error.");
     }
     //CAF setting
     if(setCAFMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGD("setCollectiveSignature setCAFMode is error.");
+        ALOGD("setCollectiveSignature setCAFMode is error.");
     }
 
 #endif //SCRITCH_OFF
     //Focus Mode setting
     if(setFocusMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollectiveSignature setFocusMode is error.");
+        ALOGE("setCollectiveSignature setFocusMode is error.");
     }
 
     if( MDP_CCS_YUV2RGB == mdp_ccs_save.direction ){
         if((CAMERA_SIGNATURE_HD720P_DISPSIZE_WIDTH == mDimension.display_width) && (CAMERA_SIGNATURE_HD720P_DISPSIZE_HEIGHT == mDimension.display_height)) {
             if((ioctlRetVal = ioctl(fb_fd, MSMFB_SET_CCS_MATRIX, &mdp_ccs_hd)) < 0) {
-                LOGE("setCollectiveSignature MSMFB_SET_CCS_MATRIX(720P): ioctl failed. ioctl return value is %d.", ioctlRetVal);
+                ALOGE("setCollectiveSignature MSMFB_SET_CCS_MATRIX(720P): ioctl failed. ioctl return value is %d.", ioctlRetVal);
             }
         } else {
             if((ioctlRetVal = ioctl(fb_fd, MSMFB_SET_CCS_MATRIX, &mdp_ccs_save)) < 0) {
-                LOGE("setCollectiveSignature MSMFB_SET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+                ALOGE("setCollectiveSignature MSMFB_SET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ioctlRetVal);
             }
         }
     }
 
-    LOGD("END setCollectiveSignature");
+    ALOGD("END setCollectiveSignature");
 }
 #endif//SCRITCH_OFF//beforeSetCollective
 
 void SemcCameraHardware::setCollective3rdParty()
 {
-    LOGD("START setCollective3rdParty");
+    ALOGD("START setCollective3rdParty");
     int ioctlRetVal = true;
 
     /* Scene setting */
     //BEN QRCODE
     if(setSceneMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollective3rdParty setSceneMode is error.");
+        ALOGE("setCollective3rdParty setSceneMode is error.");
     }
 
     /* Antibanding setting */
     if(setAntibanding(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollective3rdParty setAntibanding is error.");
+        ALOGE("setCollective3rdParty setAntibanding is error.");
     }
 
     /* Whitebalance setting */
     if(setWhiteBalance(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollective3rdParty setWhiteBalance is error.");
+        ALOGE("setCollective3rdParty setWhiteBalance is error.");
     }
 
     /* Effect setting */
     if(setEffect(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollective3rdParty setEffect is error.");
+        ALOGE("setCollective3rdParty setEffect is error.");
     }
 
     /* Focus Mode setting */
     if(setFocusMode(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollective3rdParty setFocusMode is error.");
+        ALOGE("setCollective3rdParty setFocusMode is error.");
     }
 
     /* Framerate setting */
     if(setFramerate(mParameters, NULL, NULL, -1, true) != NO_ERROR) {
-        LOGE("setCollective3rdParty setFramerate is error.");
+        ALOGE("setCollective3rdParty setFramerate is error.");
     }
 
     if( MDP_CCS_YUV2RGB == mdp_ccs_save.direction ){
         if((CAMERA_3RDPARTY_HD720P_DISPSIZE_WIDTH == mDimension.display_width) && (CAMERA_3RDPARTY_HD720P_DISPSIZE_HEIGHT == mDimension.display_height)) {
             if((ioctlRetVal = ioctl(fb_fd, MSMFB_SET_CCS_MATRIX, &mdp_ccs_hd)) < 0) {
-                LOGE("setCollective3rdParty MSMFB_SET_CCS_MATRIX(720P): ioctl failed. ioctl return value is %d.", ioctlRetVal);
+                ALOGE("setCollective3rdParty MSMFB_SET_CCS_MATRIX(720P): ioctl failed. ioctl return value is %d.", ioctlRetVal);
             }
         } else {
             if((ioctlRetVal = ioctl(fb_fd, MSMFB_SET_CCS_MATRIX, &mdp_ccs_save)) < 0) {
-                LOGE("setCollective3rdParty MSMFB_SET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+                ALOGE("setCollective3rdParty MSMFB_SET_CCS_MATRIX: ioctl failed. ioctl return value is %d.", ioctlRetVal);
             }
         }
     }
 
-    LOGD("END setCollective3rdParty");
+    ALOGD("END setCollective3rdParty");
 }
 
 /**
@@ -7160,7 +7160,7 @@ void SemcCameraHardware::setCollective3rdParty()
  */
 bool SemcCameraHardware::picsizeCheck(int width ,int height)
 {
-    LOGD("START picsizeCheck : width = %d ,height = %d"
+    ALOGD("START picsizeCheck : width = %d ,height = %d"
                                                  ,width ,height);
 
     if(((width == CAMERA_QVGASIZE_WIDTH)&&(height == CAMERA_QVGASIZE_HEIGHT))||
@@ -7220,7 +7220,7 @@ bool SemcCameraHardware::picsizeCheck(int width ,int height)
     }
     else
     {
-        LOGW("picsizeCheck : mCameraPicsize Error");
+        ALOGW("picsizeCheck : mCameraPicsize Error");
         mCameraPicsize = CAMERAHAL_PICSIZE_NOTSUPPORT;
     }
 
@@ -7248,7 +7248,7 @@ bool SemcCameraHardware::picsizeCheck(int width ,int height)
         mCameraPreviewsize = CAMERAHAL_PREVIEWSIZE_WVGA;
         break;
     default:
-        LOGW("picsizeCheck : mCameraPreviewsize Error");
+        ALOGW("picsizeCheck : mCameraPreviewsize Error");
         mCameraPreviewsize = CAMERAHAL_PREVIEWSIZE_NOTSUPPORT;
         return false;
 
@@ -7264,7 +7264,7 @@ bool SemcCameraHardware::picsizeCheck(int width ,int height)
             mThumbnailHeigth = CAMERA_QVGASIZE_HEIGHT;
     }
 
-    LOGD("END picsizeCheck");
+    ALOGD("END picsizeCheck");
     return true;
 }
 /**
@@ -7281,13 +7281,13 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
 {
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0){
         Mutex::Autolock l(&mLock);
-        LOGD("START setParameters(params, (char*)key, (int*)value) : params = %p, key = %s, value = %d", &params, key, value);
+        ALOGD("START setParameters(params, (char*)key, (int*)value) : params = %p, key = %s, value = %d", &params, key, value);
 #if SCRITCH_OFF
         if((strcmp(key, CameraParameters::SCENE_RECOGNITION) != 0)) {
             if((CAMERAHAL_STATE_AFSTART  == mStateCameraHal) ||
                (CAMERAHAL_STATE_AFCANCEL == mStateCameraHal))
             {
-                LOGW("END setParameters(Separate Setting) : mStateCameraHal Status Error, mStateCameraHal = %d", mStateCameraHal);
+                ALOGW("END setParameters(Separate Setting) : mStateCameraHal Status Error, mStateCameraHal = %d", mStateCameraHal);
                 return NO_ERROR;
             }
             if(CAMERAHAL_STATE_AFLOCK == mStateCameraHal){
@@ -7295,7 +7295,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
                    (strcmp(key, CameraParameters::KEY_FOCUS_MODE) == 0)){
                         //code nothing
                 }else{
-                    LOGE("END setParameters(Separate Setting) : mStateCameraHal Status is CAMERAHAL_STATE_AFLOCK, mStateCameraHal = %d", mStateCameraHal);
+                    ALOGE("END setParameters(Separate Setting) : mStateCameraHal Status is CAMERAHAL_STATE_AFLOCK, mStateCameraHal = %d", mStateCameraHal);
                     return NO_ERROR;
                 }
             }
@@ -7305,17 +7305,17 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         if(strcmp(key, CameraParameters::KEY_SCENE_MODE) == 0) {
             //BEN QRCODE
             if(setSceneMode(params, key, NULL, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setSceneMode is error.");
+                ALOGE("END setParameters(Separate Setting) : setSceneMode is error.");
                 return NO_ERROR;
             }
             strcpy(mKeyScene, CameraParameters::KEY_SCENE_MODE);
-            LOGV("setParameters(Separate setting) : mSceneMode = %s, mKeyScene = %s", mSceneMode, mKeyScene);
+            ALOGV("setParameters(Separate setting) : mSceneMode = %s, mKeyScene = %s", mSceneMode, mKeyScene);
         }
         //WhiteBalance
         else
          if(strcmp(key, CameraParameters::KEY_WHITE_BALANCE) == 0){
             if(setWhiteBalance(params, key, NULL, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setWhiteBalance is error.");
+                ALOGE("END setParameters(Separate Setting) : setWhiteBalance is error.");
                 return NO_ERROR;
             }
         }
@@ -7324,7 +7324,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //ExposureCompensation
         else if(strcmp(key, CameraParameters::EXPOSURE_COMPENSATION) == 0){
             if(setExposureCompensation(params, key, NULL, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setExposureCompensation is error.");
+                ALOGE("END setParameters(Separate Setting) : setExposureCompensation is error.");
                 return NO_ERROR;
             }
         }
@@ -7333,21 +7333,21 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //AutoExposure(ExposureMetering)
         else if(strcmp(key, CameraParameters::KEY_AUTO_EXPOSURE) == 0){
             if(setAutoExposure(params, key, NULL, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setAutoExposure is error.");
+                ALOGE("END setParameters(Separate Setting) : setAutoExposure is error.");
                 return NO_ERROR;
             }
         }
         //AutoFocusMode
         else if(strcmp(key, CameraParameters::AF_MODE) == 0){
             if(setAfMode(params, key, NULL, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setAfMode is error.");
+                ALOGE("END setParameters(Separate Setting) : setAfMode is error.");
                 return NO_ERROR;
             }
         }
         //HandJitterReduction
         else if(strcmp(key, CameraParameters::HJR_MODE) == 0){
             if(setHandJitterReduction(params, key, NULL, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setHandJitterReduction is error.");
+                ALOGE("END setParameters(Separate Setting) : setHandJitterReduction is error.");
                 return NO_ERROR;
             }
         }
@@ -7356,11 +7356,11 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
             if(false == previewEnabled())
             {
                 if(setOrientation(params) != NO_ERROR) {
-                    LOGW("END setParameters(Separate Setting) : setOrientation error.");
+                    ALOGW("END setParameters(Separate Setting) : setOrientation error.");
                     return NO_ERROR;
                 }
             }else{
-                LOGW("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
+                ALOGW("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
             }
             return NO_ERROR;
         }
@@ -7368,14 +7368,14 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //SmileMode
         else if(strcmp(key, CameraParameters::SMILE_MODE) == 0){
             if(setSmileMode(params, key, NULL, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setSmileMode  error.");
+                ALOGW("END setParameters(Separate Setting) : setSmileMode  error.");
                 return NO_ERROR;
             }
         }
         //FacedetectMode
         else if(strcmp(key, CameraParameters::FACE_MODE) == 0){
             if(setFacedetectMode(params, key, NULL, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setFacedetectMode  error.");
+                ALOGW("END setParameters(Separate Setting) : setFacedetectMode  error.");
                 return NO_ERROR;
             }
         }
@@ -7385,7 +7385,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //FocusMode(AutoFocusRange)
         else if(strcmp(key, CameraParameters::KEY_FOCUS_MODE) == 0){
             if(setFocusMode(params, key, NULL, value) != NO_ERROR) {
-                LOGD("END setParameters(Separate Setting) : setFocusMode is error.");
+                ALOGD("END setParameters(Separate Setting) : setFocusMode is error.");
                 return NO_ERROR;
             }
         }
@@ -7394,9 +7394,9 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         else if(strcmp(key, CameraParameters::CONFIGURATION) == 0){
             if(false == previewEnabled()){
                 mConfigurationFlag = true;
-                LOGD("END setParameters(Separate Setting) : mConfigurationFlag[%d]", mConfigurationFlag);
+                ALOGD("END setParameters(Separate Setting) : mConfigurationFlag[%d]", mConfigurationFlag);
             }else{
-                LOGD("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
+                ALOGD("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
             }
             return NO_ERROR;
         }
@@ -7405,13 +7405,13 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //JPEG quality
         else if(strcmp(key, CameraParameters::KEY_JPEG_QUALITY) == 0){
             if(setJpegQuality(params, key, NULL, value) != NO_ERROR) {
-                LOGD("END setParameters(Separate Setting) : setJpegQuality  error.");
+                ALOGD("END setParameters(Separate Setting) : setJpegQuality  error.");
                 return NO_ERROR;
             }
         }
         else if (strcmp(key, CameraParameters::KEY_ZOOM) == 0){
             if(setZoom(params, key, NULL, value) != NO_ERROR){
-                LOGD("%s Failed to set zoom", __FUNCTION__);
+                ALOGD("%s Failed to set zoom", __FUNCTION__);
                 return NO_ERROR;
             }
         }
@@ -7420,7 +7420,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //CAF
         else if(strcmp(key, CameraParameters::CAF_MODE) == 0){
             if(setCAFMode(params, key, NULL, value) != NO_ERROR) {
-                LOGD("END setParameters(Separate Setting) : setCAFMode  error.");
+                ALOGD("END setParameters(Separate Setting) : setCAFMode  error.");
                 return NO_ERROR;
             }
         }
@@ -7428,7 +7428,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* ROTATION */
         else if(strcmp(key, CameraParameters::KEY_ROTATION) == 0){
             if(setRotation(params, key, NULL, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setRotation  error.");
+                ALOGW("END setParameters(Separate Setting) : setRotation  error.");
                 return NO_ERROR;
             }
         }
@@ -7436,10 +7436,10 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
 
         else{
             //Not anywhere
-            LOGW("END setParameters(Separate Setting) :  error : params = %p, key = %s, value = %d", &params, key, value);
+            ALOGW("END setParameters(Separate Setting) :  error : params = %p, key = %s, value = %d", &params, key, value);
             return NO_ERROR;
         }
-        LOGD("END setParameters()");
+        ALOGD("END setParameters()");
     }
     return NO_ERROR;
 
@@ -7458,14 +7458,14 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
 {
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0){
         Mutex::Autolock l(&mLock);
-        LOGD("START setParameters(params, (char*)key, (char*)value) : params = %p, key = %s, value = %s", &params, key, value);
+        ALOGD("START setParameters(params, (char*)key, (char*)value) : params = %p, key = %s, value = %s", &params, key, value);
 
 #if SCRITCH_OFF
         if((strcmp(key, CameraParameters::SCENE_RECOGNITION) != 0) && (strcmp(key, CameraParameters::TALLY_LIGHT) != 0)) {
             if((CAMERAHAL_STATE_AFSTART  == mStateCameraHal) ||
                (CAMERAHAL_STATE_AFCANCEL == mStateCameraHal))
             {
-                LOGW("END setParameters(Separate Setting) : mStateCameraHal Status Error, mStateCameraHal = %d", mStateCameraHal);
+                ALOGW("END setParameters(Separate Setting) : mStateCameraHal Status Error, mStateCameraHal = %d", mStateCameraHal);
                 return NO_ERROR;
             }
             if(CAMERAHAL_STATE_AFLOCK == mStateCameraHal){
@@ -7473,7 +7473,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
                    (strcmp(key, CameraParameters::KEY_FOCUS_MODE) == 0)){
                         //code nothing
                 }else{
-                    LOGE("END setParameters(Separate Setting) : mStateCameraHal Status is CAMERAHAL_STATE_AFLOCK, mStateCameraHal = %d", mStateCameraHal);
+                    ALOGE("END setParameters(Separate Setting) : mStateCameraHal Status is CAMERAHAL_STATE_AFLOCK, mStateCameraHal = %d", mStateCameraHal);
                     return NO_ERROR;
                 }
             }
@@ -7484,20 +7484,20 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
             //compare setting value and changing value
             //BEN QRCODE
             if(setSceneMode(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setSceneMode is error.");
+                ALOGE("END setParameters(Separate Setting) : setSceneMode is error.");
                 return NO_ERROR;
             }
-            LOGV("setParameters(Separate setting) : mSceneMode = %s, mKeyScene = %s", mSceneMode, mKeyScene);
+            ALOGV("setParameters(Separate setting) : mSceneMode = %s, mKeyScene = %s", mSceneMode, mKeyScene);
         }
         //SceneRecognition
         else if(strcmp(key, CameraParameters::SCENE_RECOGNITION) == 0){
             //compare setting value and changing value
             if(setSceneRecognition(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setSceneRecognition is error.");
+                ALOGE("END setParameters(Separate Setting) : setSceneRecognition is error.");
                 return NO_ERROR;
             }
             strcpy(mKeyScene, CameraParameters::SCENE_RECOGNITION);
-            LOGV("setParameters(Separate setting) : mSceneMode = %s, mKeyScene = %s", mSceneMode, mKeyScene);
+            ALOGV("setParameters(Separate setting) : mSceneMode = %s, mKeyScene = %s", mSceneMode, mKeyScene);
 
             char afMode_value[CAMERA_STRING_VALUE_MAXLEN];
             strcpy(afMode_value,CameraParameters::SINGLE);
@@ -7507,7 +7507,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
                 strcpy(afMode_value,CameraParameters::AREA);
             }
             if(setAfMode(params, CameraParameters::AF_MODE, afMode_value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setAfMode is error.");
+                ALOGE("END setParameters(Separate Setting) : setAfMode is error.");
                 return NO_ERROR;
             }
         }
@@ -7518,7 +7518,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
          if(strcmp(key, CameraParameters::KEY_WHITE_BALANCE) == 0){
 
             if(setWhiteBalance(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setWhiteBalance is error.");
+                ALOGE("END setParameters(Separate Setting) : setWhiteBalance is error.");
                 return NO_ERROR;
             }
         }
@@ -7526,7 +7526,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //ExposureCompensation
         else if(strcmp(key, CameraParameters::EXPOSURE_COMPENSATION) == 0){
             if(setExposureCompensation(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setExposureCompensation is error.");
+                ALOGE("END setParameters(Separate Setting) : setExposureCompensation is error.");
                 return NO_ERROR;
             }
         }
@@ -7535,7 +7535,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //AutoExposure(ExposureMetering)
         else if(strcmp(key, CameraParameters::KEY_AUTO_EXPOSURE) == 0){
             if(setAutoExposure(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setAutoExposure is error.");
+                ALOGE("END setParameters(Separate Setting) : setAutoExposure is error.");
                 return NO_ERROR;
             }
         }
@@ -7543,7 +7543,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //AutoFocusMode
         else if(strcmp(key, CameraParameters::AF_MODE) == 0){
             if(setAfMode(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setAfMode is error.");
+                ALOGE("END setParameters(Separate Setting) : setAfMode is error.");
                 return NO_ERROR;
             }
         }
@@ -7551,7 +7551,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //HandJitterReduction
         else if(strcmp(key, CameraParameters::HJR_MODE) == 0){
             if(setHandJitterReduction(params, key, value) != NO_ERROR) {
-                LOGE("END setParameters(Separate Setting) : setHandJitterReduction is error.");
+                ALOGE("END setParameters(Separate Setting) : setHandJitterReduction is error.");
                 return NO_ERROR;
             }
         }
@@ -7559,11 +7559,11 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         else if(strcmp(key, CameraParameters::ORIENTATION) == 0){
             if(false == previewEnabled()) {
                 if(setOrientation(params) != NO_ERROR) {
-                    LOGW("END setParameters(Separate Setting) : setOrientation error.");
+                    ALOGW("END setParameters(Separate Setting) : setOrientation error.");
                     return NO_ERROR;
                 }
             }else{
-                LOGW("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
+                ALOGW("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
             }
             return NO_ERROR;
         }
@@ -7571,14 +7571,14 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //SmileMode
         else if(strcmp(key, CameraParameters::SMILE_MODE) == 0){
             if(setSmileMode(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setSmileMode  error.");
+                ALOGW("END setParameters(Separate Setting) : setSmileMode  error.");
                 return NO_ERROR;
             }
         }
         //FacedetectMode
         else if(strcmp(key, CameraParameters::FACE_MODE) == 0){
             if(setFacedetectMode(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setFacedetectMode  error.");
+                ALOGW("END setParameters(Separate Setting) : setFacedetectMode  error.");
                 return NO_ERROR;
             }
         }
@@ -7588,7 +7588,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //FocusMode(AutoFocusRange)
         else if(strcmp(key, CameraParameters::KEY_FOCUS_MODE) == 0){
             if(setFocusMode(params, key, value) != NO_ERROR) {
-                LOGD("END setParameters(Separate Setting) : setFocusMode is error.");
+                ALOGD("END setParameters(Separate Setting) : setFocusMode is error.");
                 return NO_ERROR;
             }
         }
@@ -7597,16 +7597,16 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         else if(strcmp(key, CameraParameters::CONFIGURATION) == 0){
             if(false == previewEnabled()){
                 mConfigurationFlag = true;
-                LOGD("END setParameters(Separate Setting) : mConfigurationFlag[%d]", mConfigurationFlag);
+                ALOGD("END setParameters(Separate Setting) : mConfigurationFlag[%d]", mConfigurationFlag);
             }else{
-                LOGD("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
+                ALOGD("END setParameters(Separate Setting) : status error, mStateCameraHal = %d",mStateCameraHal);
             }
             return NO_ERROR;
         }
 #endif//SCRITCH_OFF
         //JPEG quality
         else if(strcmp(key, CameraParameters::KEY_JPEG_QUALITY) == 0){
-            LOGD("END setParameters(Separate Setting) : JPEG quality  error.");
+            ALOGD("END setParameters(Separate Setting) : JPEG quality  error.");
             return NO_ERROR;
         }
 
@@ -7614,7 +7614,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         //CAF
         else if(strcmp(key, CameraParameters::CAF_MODE) == 0){
             if(setCAFMode(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setCAFMode  error.");
+                ALOGW("END setParameters(Separate Setting) : setCAFMode  error.");
                 return NO_ERROR;
             }
         }
@@ -7623,7 +7623,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS LATITUDE */
         else if(strcmp(key, CameraParameters::KEY_GPS_LATITUDE) == 0){
             if(setGpsLatitude(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsLatitude  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsLatitude  error.");
                 return NO_ERROR;
             }
         }
@@ -7631,7 +7631,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS LATITUDE REF */
         else if(strcmp(key, CameraParameters::KEY_GPS_LATITUDE_REF) == 0){
             if(setGpsLatitudeRef(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsLatitudeRef  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsLatitudeRef  error.");
                 return NO_ERROR;
             }
         }
@@ -7639,7 +7639,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS LONGITUDE */
         else if(strcmp(key, CameraParameters::KEY_GPS_LONGITUDE) == 0){
             if(setGpsLongitude(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsLongitude  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsLongitude  error.");
                 return NO_ERROR;
             }
         }
@@ -7647,7 +7647,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS LONGITUDE REF */
         else if(strcmp(key, CameraParameters::KEY_GPS_LONGITUDE_REF) == 0){
             if(setGpsLongitudeRef(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsLongitudeRef  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsLongitudeRef  error.");
                 return NO_ERROR;
             }
         }
@@ -7655,7 +7655,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS ALTITUDE */
         else if(strcmp(key, CameraParameters::KEY_GPS_ALTITUDE) == 0){
             if(setGpsAltitude(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsAltitude  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsAltitude  error.");
                 return NO_ERROR;
             }
         }
@@ -7663,7 +7663,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS ALTITUDE REF */
         else if(strcmp(key, CameraParameters::KEY_GPS_ALTITUDE_REF) == 0){
             if(setGpsAltitudeRef(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsAltitudeRef  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsAltitudeRef  error.");
                 return NO_ERROR;
             }
         }
@@ -7671,7 +7671,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* GPS STATUS */
         else if(strcmp(key, CameraParameters::KEY_GPS_STATUS) == 0){
             if(setGpsStatus(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setGpsStatus  error.");
+                ALOGW("END setParameters(Separate Setting) : setGpsStatus  error.");
                 return NO_ERROR;
             }
         }
@@ -7679,31 +7679,31 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
         /* FACE DETECTION */
         else if(strcmp(key, CameraParameters::FACE_DETECTION) == 0){
             if(setFaceDetection(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setFaceDetection  error.");
+                ALOGW("END setParameters(Separate Setting) : setFaceDetection  error.");
                 return NO_ERROR;
             }
         }
         /* FLASH STATUS */
         else if(strcmp(key, CameraParameters::FLASH_STATUS) == 0){
             if(setFlashStatus(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setFlashStatus  error.");
+                ALOGW("END setParameters(Separate Setting) : setFlashStatus  error.");
                 return NO_ERROR;
             }
         }
         //TALLY LIGHT
         else if(strcmp(key, CameraParameters::TALLY_LIGHT) == 0){
             if(setFlashlightBrightness(params, key, value) != NO_ERROR) {
-                LOGW("END setParameters(Separate Setting) : setFlashlightBrightness  error.");
+                ALOGW("END setParameters(Separate Setting) : setFlashlightBrightness  error.");
                 return NO_ERROR;
             }
         }
 #endif//SCRITCH_OFF
         else{
             //Not anywhere
-            LOGW("END setParameters(Separate Setting) :  error : params = %p, key = %s, value = %s", &params, key, value);
+            ALOGW("END setParameters(Separate Setting) :  error : params = %p, key = %s, value = %s", &params, key, value);
             return NO_ERROR;
         }
-        LOGD("END setParameters()");
+        ALOGD("END setParameters()");
     }
     return NO_ERROR;
 }
@@ -7720,7 +7720,7 @@ status_t SemcCameraHardware::setParameters(CameraParameters &params, const char 
 status_t SemcCameraHardware::setPreviewSize(CameraParameters &params, int width, int height)
 {
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0){
-        LOGD("START setPreviewSize : width[%d]height[%d]",width,height);
+        ALOGD("START setPreviewSize : width[%d]height[%d]",width,height);
         Mutex::Autolock l(&mLock);
 
         for (size_t i = 0; i < previewSizeCount; ++i) {
@@ -7730,7 +7730,7 @@ status_t SemcCameraHardware::setPreviewSize(CameraParameters &params, int width,
                 // targets)
                 if(width == 1280 && height == 720 &&
                  ((mCurrentTarget == TARGET_MSM7630) || (mCurrentTarget == TARGET_QSD8250))){
-                    LOGD("change preview resolution to 768X432 since recording is in 720p");
+                    ALOGD("change preview resolution to 768X432 since recording is in 720p");
                     mDimension.display_width = 768;
                     mDimension.display_height= 432;
                 }else {
@@ -7742,11 +7742,11 @@ status_t SemcCameraHardware::setPreviewSize(CameraParameters &params, int width,
                    ((CAMERA_OHDFWVGASIZE_WIDTH == mDimension.display_width) && (CAMERA_OHDFWVGASIZE_HEIGHT == mDimension.display_height))){
                     mDimension.display_width = CAMERA_FWVGASIZE_DRV_WIDTH;
                 }
-                LOGE("END setPreviewSize : ");
+                ALOGE("END setPreviewSize : ");
                 return NO_ERROR;
             }
         }
-        LOGD("END setPreviewSize : BAD_VALUE");
+        ALOGD("END setPreviewSize : BAD_VALUE");
         return BAD_VALUE;
     }
     return NO_ERROR;
@@ -7765,7 +7765,7 @@ status_t SemcCameraHardware::setPreviewSize(CameraParameters &params, int width,
 status_t SemcCameraHardware::setPictureSize(CameraParameters &params, int width, int height)
 {
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0){
-        LOGD("START setPictureSize width[%d]height[%d]",width,height);
+        ALOGD("START setPictureSize width[%d]height[%d]",width,height);
         Mutex::Autolock l(&mLock);
         // Validate the picture size
         for (int i = 0; i < PICTURE_SIZE_COUNT_SEMC; ++i) {
@@ -7773,11 +7773,11 @@ status_t SemcCameraHardware::setPictureSize(CameraParameters &params, int width,
                 mParameters.setPictureSize(picture_sizes[i].width, picture_sizes[i].height);
                 mDimension.picture_width = picture_sizes[i].width;
                 mDimension.picture_height = picture_sizes[i].height;
-                LOGD("END setPictureSize :");
+                ALOGD("END setPictureSize :");
                 return NO_ERROR;
             }
         }
-        LOGE("END setPictureSize : BAD_VALUE");
+        ALOGE("END setPictureSize : BAD_VALUE");
         return BAD_VALUE;
     }
     return NO_ERROR;
@@ -7796,17 +7796,17 @@ status_t SemcCameraHardware::setPictureSize(CameraParameters &params, int width,
  */
 status_t SemcCameraHardware::startAutoFocus(bool ae_lock, bool awb_lock, bool focus_lock)
 {
-    LOGD("START startAutoFocus : mStateCameraHal = %d ", mStateCameraHal);
+    ALOGD("START startAutoFocus : mStateCameraHal = %d ", mStateCameraHal);
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) != 0){
-        LOGD("END startAutoFocus : mSemcCameraFlag is 3rdParty");
+        ALOGD("END startAutoFocus : mSemcCameraFlag is 3rdParty");
         return NO_ERROR;
     }
     Mutex::Autolock l(&mLock);
     if(CAMERAHAL_STATE_INIT == mStateCameraHal){
-        LOGW("END startAutoFocus : mStateCameraHal is INIT");
+        ALOGW("END startAutoFocus : mStateCameraHal is INIT");
         return NO_ERROR;
     }else if((CAMERAHAL_STATE_PREVIEWSTART != mStateCameraHal) && (CAMERAHAL_STATE_AFLOCK != mStateCameraHal)){
-        LOGW("END startAutoFocus : AutoFocus status Error");
+        ALOGW("END startAutoFocus : AutoFocus status Error");
         return UNKNOWN_ERROR;
     }
 
@@ -7816,11 +7816,11 @@ status_t SemcCameraHardware::startAutoFocus(bool ae_lock, bool awb_lock, bool fo
     mFocusPosition = CAMERAHAL_LENS_POSITION_NORMAL;
 
     if (native_start_autofocus(mCameraControlFd, ae_lock, awb_lock, focus_lock) == false) {
-        LOGE("END startAutoFocus : main:%d start_preview failed!\n", __LINE__);
+        ALOGE("END startAutoFocus : main:%d start_preview failed!\n", __LINE__);
         mStateCameraHal = oldState;
         return UNKNOWN_ERROR;
     }
-    LOGD("END startAutoFocus");
+    ALOGD("END startAutoFocus");
     return NO_ERROR;
 }
 
@@ -7838,7 +7838,7 @@ status_t SemcCameraHardware::startAutoFocus(bool ae_lock, bool awb_lock, bool fo
  */
 bool SemcCameraHardware::converter_afresult(struct msm_af_results_t * af_result, struct af_result_t *hal_afstate_result, bool autoFocusEnabled, bool startAFEnabled)
 {
-    LOGD("START converter_afresult : af_result [%d] autoFocusEnabled[%d] startAFEnabled[%d]", af_result->msm_af_result, autoFocusEnabled, startAFEnabled);
+    ALOGD("START converter_afresult : af_result [%d] autoFocusEnabled[%d] startAFEnabled[%d]", af_result->msm_af_result, autoFocusEnabled, startAFEnabled);
     bool rc = true;
 
     switch(af_result->msm_af_result)
@@ -7872,7 +7872,7 @@ bool SemcCameraHardware::converter_afresult(struct msm_af_results_t * af_result,
 
       case MSM_AF_ERROR:
       default:
-        LOGW("converter_afresult is error");
+        ALOGW("converter_afresult is error");
         if(CAMERAHAL_STATE_AFCANCEL == mStateCameraHal)
         {
             hal_afstate_result->afstate_result = CAMERA_AUTOFOCUS_STATE_CANCEL;
@@ -7911,14 +7911,14 @@ bool SemcCameraHardware::converter_afresult(struct msm_af_results_t * af_result,
               break;
 
               default:
-                LOGW("failure_info is error");
+                ALOGW("failure_info is error");
                 hal_afstate_result->afstate_result = CAMERA_AUTOFOCUS_FAILURE_NONE;
                 rc = false;
               break;
             }
         }
     }
-    LOGD("END converter_afresult : afstate_result = %d , af_failurestate_info = %d.", hal_afstate_result->afstate_result, hal_afstate_result->af_failurestate_info);
+    ALOGD("END converter_afresult : afstate_result = %d , af_failurestate_info = %d.", hal_afstate_result->afstate_result, hal_afstate_result->af_failurestate_info);
     return rc;
 }
 #endif//SCRITCH_OFF
@@ -7933,7 +7933,7 @@ bool SemcCameraHardware::converter_afresult(struct msm_af_results_t * af_result,
  */
 retCbErrType SemcCameraHardware::startrawsnapshot()
 {
-    LOGD("START startrawsnapshot");
+    ALOGD("START startrawsnapshot");
     size_t i = 0;
     size_t size_num = 0;
     int quality = 0;
@@ -7954,7 +7954,7 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
         qsize = jpeg_quality_sizes_fine;
         size_num = sizeof(jpeg_quality_sizes_fine) / sizeof(jpeg_quality_sizes_fine[0]);
     }else{
-        LOGE("END startrawsnapshot : invalid jpeg quality = %d", quality);
+        ALOGE("END startrawsnapshot : invalid jpeg quality = %d", quality);
         return RET_FAIL_YUV_CB;
     }
 
@@ -7965,13 +7965,13 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
     }
 
     if(size_num == i){
-        LOGE("END startrawsnapshot : quality check failed! mCameraPicsize = %d", mCameraPicsize);
+        ALOGE("END startrawsnapshot : quality check failed! mCameraPicsize = %d", mCameraPicsize);
         return RET_FAIL_YUV_CB;
     }
     usleep(10*1000);    //I add a cord temporarily for taking picture trouble.
 
     if(native_set_jpegquality(mCameraControlFd,&qsize[i]) == false) {
-        LOGE("END startrawsnapshot : native_set_jpegquality  is error");
+        ALOGE("END startrawsnapshot : native_set_jpegquality  is error");
         return RET_FAIL_YUV_CB;
     }
 
@@ -7980,7 +7980,7 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
 
     if(native_get_capture_setting(mCameraControlFd,&hal_capture_setting) == false) {
 
-        LOGE("END startrawsnapshot : native_get_capture_setting  is error");
+        ALOGE("END startrawsnapshot : native_get_capture_setting  is error");
         return RET_FAIL_YUV_CB;
     }
     mJpegSnapShotHeap =
@@ -7997,19 +7997,19 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
 
     if (!mJpegSnapShotHeap->initialized()) {
         mJpegSnapShotHeap.clear();
-        LOGE("END startrawsnapshot : error initializing mJpegSnapShotHeap");
+        ALOGE("END startrawsnapshot : error initializing mJpegSnapShotHeap");
         return RET_FAIL_YUV_CB;
     }
 
     if(native_start_raw_snapshot(mCameraControlFd) == false) {
-        LOGE("END startrawsnapshot : native_start_raw_snapshot  is error");
+        ALOGE("END startrawsnapshot : native_start_raw_snapshot  is error");
         return RET_FAIL_YUV_CB;
     }
 
     if (mDataCallback && (mMsgEnabled & CAMERA_MSG_RAW_IMAGE) ) {
         if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0) {
             if(native_sync_raw_snapshot_interval(mCameraControlFd) == false) {
-                LOGE("END startrawsnapshot : native_sync_raw_snapshot_interval  is error");
+                ALOGE("END startrawsnapshot : native_sync_raw_snapshot_interval  is error");
                 return RET_FAIL_YUV_CB;
             } else {
                 int raw_width = CAMERA_VGASIZE_WIDTH;
@@ -8027,7 +8027,7 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
 
                 if (!mRawBGRA8888Heap->initialized()) {
                     mRawBGRA8888Heap.clear();
-                    LOGE("END startrawsnapshot : error initializing mRawBGRA8888Heap");
+                    ALOGE("END startrawsnapshot : error initializing mRawBGRA8888Heap");
                     return RET_FAIL_YUV_CB;
                 }
             }
@@ -8039,7 +8039,7 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
             mRawBGRA8888Heap.clear();
         }
     } else {
-        LOGW("startrawsnapshot : mDataCallback not YUV_CB");
+        ALOGW("startrawsnapshot : mDataCallback not YUV_CB");
     }
 
     retCbErrType ret;
@@ -8051,28 +8051,28 @@ retCbErrType SemcCameraHardware::startrawsnapshot()
     }
 
     if(native_get_picture(mCameraControlFd ,&mCrop)== false) {
-        LOGE("END startrawsnapshot : native_get_picture is error");
+        ALOGE("END startrawsnapshot : native_get_picture is error");
         return ret;
     }
 
     if(false == native_get_exifinfo(mCameraControlFd))
     {
-        LOGE("END startrawsnapshot : native_get_exifinfo is error");
+        ALOGE("END startrawsnapshot : native_get_exifinfo is error");
         return ret;
     }
 
     if( native_get_jpegfilesize(mCameraControlFd) == false){
-        LOGE("END startrawsnapshot : native_get_jpegfilesize is error.");
+        ALOGE("END startrawsnapshot : native_get_jpegfilesize is error.");
         return ret;
     }
-    LOGD("END startrawsnapshot");
+    ALOGD("END startrawsnapshot");
     return RET_NO_ERROR;
 }
 
 
 bool SemcCameraHardware::native_unregister_snapshot_bufs()
 {
-    LOGD("START native_unregister_snapshot_bufs");
+    ALOGD("START native_unregister_snapshot_bufs");
 
     /* For thumbnail*/
     register_buf(mCameraControlFd,
@@ -8096,7 +8096,7 @@ bool SemcCameraHardware::native_unregister_snapshot_bufs()
                  false,
                  false  /*unregister*/ );
 
-    LOGD("END native_unregister_snapshot_bufs");
+    ALOGD("END native_unregister_snapshot_bufs");
 
     return true;
 }
@@ -8111,7 +8111,7 @@ void print_mem(void const *vp, size_t n)
     size_t i;
     for(i=0;i<n; i++)
     {
-        LOGD("%s %d %02x", __FUNCTION__, i, p[i]);
+        ALOGD("%s %d %02x", __FUNCTION__, i, p[i]);
     }
 }
 
@@ -8126,7 +8126,7 @@ void print_mem(void const *vp, size_t n)
  */
 bool SemcCameraHardware::native_get_exifinfo(int camfd)
 {
-    LOGD("START native_get_exifinfo");
+    ALOGD("START native_get_exifinfo");
     int     ioctlRetVal;
     struct  msm_ctrl_cmd ctrlCmd;
     camera_exif_t exif_type;
@@ -8139,7 +8139,7 @@ bool SemcCameraHardware::native_get_exifinfo(int camfd)
 
     memset(&exif_type, 0, sizeof(camera_exif_t));
     if((ioctlRetVal = ioctl(camfd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd)) < 0){
-        LOGE("native_get_exifinfo: ioctl failed. ioctl return value is %d.", ioctlRetVal);
+        ALOGE("native_get_exifinfo: ioctl failed. ioctl return value is %d.", ioctlRetVal);
         return false;
     }
 
@@ -8171,7 +8171,7 @@ bool SemcCameraHardware::native_get_exifinfo(int camfd)
     mExifInfo.flash                      = exif_type.flash;
     mExifInfo.distance_range             = exif_type.subject_distance_range;
 
-    LOGD("END native_get_exifinfo");
+    ALOGD("END native_get_exifinfo");
     return true;
 }
 /**
@@ -8186,7 +8186,7 @@ bool SemcCameraHardware::native_get_exifinfo(int camfd)
  */
 status_t SemcCameraHardware::convertImage864to854(uint8_t* outBuffer, uint8_t* inBuffer)
 {
-    LOGD("START convertImage864to854");
+    ALOGD("START convertImage864to854");
     if(NULL == outBuffer || NULL == inBuffer){
         return INVALID_OPERATION;
     }
@@ -8195,7 +8195,7 @@ status_t SemcCameraHardware::convertImage864to854(uint8_t* outBuffer, uint8_t* i
     for(i=0; i < CAMERA_FWVGASIZE_DRV_HEIGHT*1.5; i++){
         memcpy(outBuffer+(i*CAMERA_FWVGASIZE_WIDTH), inBuffer+(i*CAMERA_FWVGASIZE_DRV_WIDTH), CAMERA_FWVGASIZE_WIDTH);
     }
-    LOGD("END convertImage864to854");
+    ALOGD("END convertImage864to854");
     return NO_ERROR;
 }
 
@@ -8211,7 +8211,7 @@ status_t SemcCameraHardware::convertImage864to854(uint8_t* outBuffer, uint8_t* i
  */
 status_t SemcCameraHardware::convertImage864to848(uint8_t* outBuffer, uint8_t* inBuffer)
 {
-    LOGD("START convertImage864to848");
+    ALOGD("START convertImage864to848");
     if(NULL == outBuffer || NULL == inBuffer){
         return INVALID_OPERATION;
     }
@@ -8220,7 +8220,7 @@ status_t SemcCameraHardware::convertImage864to848(uint8_t* outBuffer, uint8_t* i
     for(i=0; i < CAMERA_FWVGASIZE_DRV_HEIGHT*1.5; i++){
         memcpy(outBuffer+(i*CAMERA_OHDFWVGASIZE_WIDTH), inBuffer+(i*CAMERA_FWVGASIZE_DRV_WIDTH), CAMERA_OHDFWVGASIZE_WIDTH);
     }
-    LOGD("END convertImage864to848");
+    ALOGD("END convertImage864to848");
     return NO_ERROR;
 }
 
@@ -8232,7 +8232,7 @@ status_t SemcCameraHardware::convertImage864to848(uint8_t* outBuffer, uint8_t* i
  */
 void SemcCameraHardware::convertRawcallback()
 {
-    LOGD("START convertRawcallback ");
+    ALOGD("START convertRawcallback ");
     int picture_width  = 0;
     int picture_height = 0;
 
@@ -8265,9 +8265,9 @@ void SemcCameraHardware::convertRawcallback()
 
     //YCbCr420LP to BGRA8888
     if(!convertYCbCr420lpToBgra8888(&ycbcr420LP_img_ptr, &bgra8888_img_ptr)){
-        LOGE("convertRawcallback :convertYCbCr420lpToBgra8888 Error");
+        ALOGE("convertRawcallback :convertYCbCr420lpToBgra8888 Error");
     }
-    LOGD("END convertRawcallback ");
+    ALOGD("END convertRawcallback ");
 }
 
 /**
@@ -8284,7 +8284,7 @@ bool SemcCameraHardware::convertYCbCr420lpToBgra8888(camera_image_type* input_im
     /* check parameter */
     if (!input_img_ptr  || !input_img_ptr->imgPtr || !output_img_ptr || !output_img_ptr->imgPtr)
     {
-        LOGE("END convertYCbCr420lpToBgra8888 : parameter error");
+        ALOGE("END convertYCbCr420lpToBgra8888 : parameter error");
         return false;
     }
 
@@ -8296,7 +8296,7 @@ bool SemcCameraHardware::convertYCbCr420lpToBgra8888(camera_image_type* input_im
 
 	//REMOVED for open sourcing due to license restrictions.
 
-    LOGD("END convertYCbCr420lpToBrga8888 ");
+    ALOGD("END convertYCbCr420lpToBrga8888 ");
     return true;
 }
 
@@ -8308,7 +8308,7 @@ bool SemcCameraHardware::convertYCbCr420lpToBgra8888(camera_image_type* input_im
  */
 bool SemcCameraHardware::getThumbnailInternal()
 {
-    LOGD("START getThumbnailInternal ");
+    ALOGD("START getThumbnailInternal ");
 #if DLOPEN_LIBMMCAMERA == 1
     int picture_width    = 0;
     int picture_height   = 0;
@@ -8338,7 +8338,7 @@ bool SemcCameraHardware::getThumbnailInternal()
                          "make thumbnail size");
 
     if (!yuv420Heap->initialized()) {
-        LOGE("getThumbnailInternal X failed: error initializing yuv420Heap.");
+        ALOGE("getThumbnailInternal X failed: error initializing yuv420Heap.");
         yuv420Heap.clear();
         return false;
     }
@@ -8359,10 +8359,10 @@ bool SemcCameraHardware::getThumbnailInternal()
     yuv420_thumbnail_img_ptr.imgPtr  = (unsigned char*)yuv420Heap->mHeap->base();
     yuv420_thumbnail_img_ptr.clrPtr  = (uint8_t*)yuv420Heap->mHeap->base() + ( thumbnail_width * thumbnail_height );
     int res = LINK_ipl_downsize(&yuv420_img_ptr, &yuv420_thumbnail_img_ptr, NULL);
-    LOGD("%s_ received %d", __FUNCTION__, res);
+    ALOGD("%s_ received %d", __FUNCTION__, res);
     //Downsize
     if(1 != res){
-        LOGE("getThumbnailInternal :ipl_downsize Error");
+        ALOGE("getThumbnailInternal :ipl_downsize Error");
         yuv420Heap.clear();
         return false;
     }
@@ -8380,7 +8380,7 @@ bool SemcCameraHardware::getThumbnailInternal()
        memcpy((uint8_t *)mThumbnailHeap->mHeap->base(),(uint8_t *)yuv420Heap->mHeap->base(), (CAMERA_NORMALTHUMBNAIL_WIDTH * CAMERA_NORMALTHUMBNAIL_HEIGHT * 1.5) );
     }
 #endif // DLOPEN_LIBMMCAMERA == 1
-    LOGD("END getThumbnailInternal ");
+    ALOGD("END getThumbnailInternal ");
     return true;
 }
 
@@ -8400,14 +8400,14 @@ status_t SemcCameraHardware::setAeAfPosition(setAeAfPosition_t position, int fac
 {
     if(((CAMERA_EXTENSION_SIGNATURE >> JUDGMENTBIT) ^ mSemcCameraFlag) == 0)
     {
-        LOGD("START setAeAfPosition");
+        ALOGD("START setAeAfPosition");
         Mutex::Autolock l(&mLock);
         if(native_set_aeaf_position(mCameraControlFd, position, face_cnt) == false)
         {
-            LOGE("END setAeAfPosition : native_set_aeaf_position is error.");
+            ALOGE("END setAeAfPosition : native_set_aeaf_position is error.");
             return UNKNOWN_ERROR;
         }
-        LOGD("END setAeAfPosition");
+        ALOGD("END setAeAfPosition");
     }
     return NO_ERROR;
 }
@@ -8434,7 +8434,7 @@ int SemcCameraHardware::getFocusPosition()
  */
 int SemcCameraHardware::getStatus()
 {
-//    LOGD("getStatus : return mStateCameraHal[%d]",mStateCameraHal);
+//    ALOGD("getStatus : return mStateCameraHal[%d]",mStateCameraHal);
     return mStateCameraHal;
 }
 
@@ -8448,10 +8448,10 @@ int SemcCameraHardware::getStatus()
  */
 void SemcCameraHardware::getPreviewSize(int *width , int *height)
 {
-//    LOGD("START getPreviewSize");
+//    ALOGD("START getPreviewSize");
      *width  = mDimension.display_width;
      *height = mDimension.display_height;
-//     LOGD("END getPreviewSize : return Display width[%d] height[%d]",*width, *height);
+//     ALOGD("END getPreviewSize : return Display width[%d] height[%d]",*width, *height);
      return;
 }
 
@@ -8467,19 +8467,19 @@ void SemcCameraHardware::getPreviewSize(int *width , int *height)
  */
 void SemcCameraHardware::getSceneNvValue(void *pBuffer, int size)
 {
-    LOGD("START getSceneNvValue");
+    ALOGD("START getSceneNvValue");
     Mutex::Autolock l(&mLock);
 
     if (size <= sizeof(scene_nv_data)) {
         memcpy(pBuffer, scene_nv_data, size);
-        LOGD("%s: nv data was copied, size[%d].", __FUNCTION__, size);
+        ALOGD("%s: nv data was copied, size[%d].", __FUNCTION__, size);
     } else {
-        LOGE("%s: nv data is not copied, \
+        ALOGE("%s: nv data is not copied, \
           the requested size[%d] exceeds scene_nv_data size[%d].",
           __FUNCTION__, size, sizeof(scene_nv_data));
     }
 
-    LOGD("END getSceneNvValue");
+    ALOGD("END getSceneNvValue");
     return;
 }
 /**
@@ -8492,10 +8492,10 @@ void SemcCameraHardware::getSceneNvValue(void *pBuffer, int size)
  */
 void SemcCameraHardware::setSceneRecognitionInfo(void *buffer, int buffer_size)
 {
-    LOGD("START setSceneRecognitionInfo : buffer[%p] buffer_size[%d]", buffer, buffer_size);
+    ALOGD("START setSceneRecognitionInfo : buffer[%p] buffer_size[%d]", buffer, buffer_size);
     mASSBuffer = buffer;
     mASSBufferSize = buffer_size;
-    LOGD("END setSceneRecognitionInfo");
+    ALOGD("END setSceneRecognitionInfo");
 }
 
 /**
@@ -8508,17 +8508,17 @@ void SemcCameraHardware::setSceneRecognitionInfo(void *buffer, int buffer_size)
  */
 char *SemcCameraHardware::getStringvalue(const char *key, int value)
 {
-    LOGD("START getStringvalue : key[%s] value[%d]", key, value);
+    ALOGD("START getStringvalue : key[%s] value[%d]", key, value);
     if((strcmp(key, CameraParameters::SCENE_RECOGNITION) == 0)) {
         int len = sizeof(scene_recognition) / sizeof(str_map);
         for (int i = 0; i < len; i++) {
             if (scene_recognition[i].mw_val == value) {
-                LOGD("END getStringvalue : return [%s]",scene_recognition[i].desc);
+                ALOGD("END getStringvalue : return [%s]",scene_recognition[i].desc);
                 return (char *)scene_recognition[i].desc;
             }
         }
     }
-    LOGD("END getStringvalue : return NULL");
+    ALOGD("END getStringvalue : return NULL");
 
     return NULL;
 }
@@ -8532,7 +8532,7 @@ char *SemcCameraHardware::getStringvalue(const char *key, int value)
 #if 1
 void SemcCameraHardware::setExifParameters()
 {
-    LOGD("START setExifParameters : ");
+    ALOGD("START setExifParameters : ");
 
     const char *str = NULL;
     short sval = 0;
@@ -8571,7 +8571,7 @@ void SemcCameraHardware::setExifParameters()
         sval = 1;
     }
 
-    LOGD("%s setting orientation to %d info was %d", __FUNCTION__, sval, rot);
+    ALOGD("%s setting orientation to %d info was %d", __FUNCTION__, sval, rot);
     addExifTag(EXIFTAGID_ORIENTATION, EXIF_SHORT, 1, 1, (void *)&sval);
 
     // set focal length tag
@@ -8728,7 +8728,7 @@ void SemcCameraHardware::setExifParameters()
 #else
 void SemcCameraHardware::setExifParameters()
 {
-    LOGD("START setExifParameters : ");
+    ALOGD("START setExifParameters : ");
 
     const char *str = NULL;
     short sval = 0;
@@ -8955,7 +8955,7 @@ void SemcCameraHardware::setExifParameters()
 
     }
 
-    LOGD("END setExifParameters : ");
+    ALOGD("END setExifParameters : ");
 }
 #endif
  /**
@@ -8968,7 +8968,7 @@ void SemcCameraHardware::setExifParameters()
  */
 bool SemcCameraHardware::receiveExifData(void)
 {
-    LOGD("START receiveExifData ");
+    ALOGD("START receiveExifData ");
 
     uint8_t *thumbnailBuff = (uint8_t *)mThumbnailBuffHeap->mHeap->base();
 
@@ -8982,7 +8982,7 @@ bool SemcCameraHardware::receiveExifData(void)
     sp<AshmemPool> jpegExifDataHeap =  NULL;
 
     if ((thumbnailBuff)[0] != 0xFF || (thumbnailBuff)[1] != 0xD8 ) {
-        LOGE("receiveExifData error : Invalid jpeg data.");
+        ALOGE("receiveExifData error : Invalid jpeg data.");
         mJpegSnapShotHeap.clear();
         mThumbnailBuffHeap.clear();
         if (mDataCallback && (mMsgEnabled & CAMERA_MSG_COMPRESSED_IMAGE)) {
@@ -9039,7 +9039,7 @@ bool SemcCameraHardware::receiveExifData(void)
                                     jpegDataSize,
                                      "EXIF_jpeg");
     if (!jpegExifDataHeap->initialized()) {
-        LOGE("receiveExifData : jpegExifDataHeap initialized error");
+        ALOGE("receiveExifData : jpegExifDataHeap initialized error");
         mJpegSnapShotHeap.clear();
         mThumbnailBuffHeap.clear();
         jpegExifDataHeap.clear();
@@ -9117,7 +9117,7 @@ bool SemcCameraHardware::receiveExifData(void)
     }
 
     jpegExifDataHeap.clear();
-    LOGD("END receiveExifData ");
+    ALOGD("END receiveExifData ");
     return true;
 }
 
@@ -9135,7 +9135,7 @@ bool SemcCameraHardware::receiveExifData(void)
  */
 bool SemcCameraHardware::native_set_parm(cam_ctrl_type type, uint16_t length, void *value, int timeout_ms)
 {
-    LOGD("START native_set_parm(set timeout) : fd[%d] cam_ctrl_type[%d] timeout[%d]", mCameraControlFd, type, timeout_ms);
+    ALOGD("START native_set_parm(set timeout) : fd[%d] cam_ctrl_type[%d] timeout[%d]", mCameraControlFd, type, timeout_ms);
 
     struct msm_ctrl_cmd ctrlCmd;
 
@@ -9148,10 +9148,10 @@ bool SemcCameraHardware::native_set_parm(cam_ctrl_type type, uint16_t length, vo
 
     if (ioctl(mCameraControlFd, MSM_CAM_IOCTL_CTRL_COMMAND, &ctrlCmd) < 0 ||
                 ctrlCmd.status != CAM_CTRL_SUCCESS) {
-        LOGE("END native_set_parm(set timeout) : error [%s]: fd %d, type [%d], length [%d], status [%d]", strerror(errno), mCameraControlFd, type, length, ctrlCmd.status);
+        ALOGE("END native_set_parm(set timeout) : error [%s]: fd %d, type [%d], length [%d], status [%d]", strerror(errno), mCameraControlFd, type, length, ctrlCmd.status);
         return false;
     }
-    LOGD("END native_set_parm(set timeout)");
+    ALOGD("END native_set_parm(set timeout)");
     return true;
 }
 
@@ -9197,15 +9197,15 @@ static void mm_camanalysis_callback(struct msm_analysis_data_t* analysis_data)
  */
 void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
 {
-    LOGD("START receiveAutoFocus : mStateCameraHal = [%d]",mStateCameraHal);
+    ALOGD("START receiveAutoFocus : mStateCameraHal = [%d]",mStateCameraHal);
 
     if((CAMERAHAL_STATE_AFSTART != mStateCameraHal) &&
        (CAMERAHAL_STATE_AFLOCK != mStateCameraHal) &&
        (CAMERAHAL_STATE_AFCANCEL != mStateCameraHal)){
-        LOGW("END receiveAutoFocus : mStateCameraHal Status Error");
+        ALOGW("END receiveAutoFocus : mStateCameraHal Status Error");
         return;
     }
-    LOGD("%s AF_RESULT %d", __FUNCTION__, af_result->msm_af_result);
+    ALOGD("%s AF_RESULT %d", __FUNCTION__, af_result->msm_af_result);
     mCallbackLock.lock();
     notify_callback autoFocuscb = mNotifyCallback;
     bool autoFocusEnabled = mNotifyCallback && (mMsgEnabled & CAMERA_MSG_FOCUS);
@@ -9216,18 +9216,18 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
     if (mCancelAutoFocusFlg && (af_result->msm_af_result >= MSM_AF_FORCE_STOP ))
     {
         Mutex::Autolock lock(&mCancelAutoFocus);
-        LOGV("receiveAutoFocus : LOCK ACQUIRED ");
+        ALOGV("receiveAutoFocus : LOCK ACQUIRED ");
         mCancelAutoFocusFlg = false;
         mAutoFocusThreadRunning = false;
         mCancelAutoFocusWait.signal();
-        LOGV("receiveAutoFocus: SIGNALLED ");
+        ALOGV("receiveAutoFocus: SIGNALLED ");
         return;
 
     }
 
     if (!autoFocusEnabled)
     {
-        LOGW("%s Autofocus callback is NULL", __FUNCTION__);
+        ALOGW("%s Autofocus callback is NULL", __FUNCTION__);
     }
 
     if(true == mFocusLockValue) {
@@ -9235,7 +9235,7 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
         mFocusLockValue = false;
     }
 
-    LOGV("receiveAutoFocus : 3rdparty : AF SUCCESS");
+    ALOGV("receiveAutoFocus : 3rdparty : AF SUCCESS");
     
     if(af_result->msm_af_result<=MSM_AF_FAILED)
     {
@@ -9247,7 +9247,7 @@ void  SemcCameraHardware::receiveAutoFocus(struct msm_af_results_t * af_result)
     mAutoFocusThreadRunning = false;
     mStateCameraHal = CAMERAHAL_STATE_PREVIEWSTART;
 
-    LOGD("END receiveAutoFocus");
+    ALOGD("END receiveAutoFocus");
 }
 
 
