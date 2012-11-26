@@ -29,26 +29,43 @@ PRODUCT_COPY_FILES += \
     $(TARGET_PREBUILT_KERNEL):kernel
 
 PRODUCT_PACKAGES += \
+	gps.es209ra \
+    sensors.es209ra \
+    lights.es209ra \
     audio.a2dp.default \
     audio_policy.es209ra \
     audio.primary.es209ra \
-    hwcomposer.qsd8k \
-    camera.es209ra \
-    gps.es209ra \
-    lights.es209ra \
+	wlan_loader \
+	wlan_cu \
+	dhcpcd.conf
+
+
+PRODUCT_PACKAGES += \
+	gralloc.default \
     gralloc.qsd8k \
+	hwcomposer.default \
+    hwcomposer.qsd8k \
     copybit.qsd8k \
     camera.qsd8k \
-    sensors.es209ra \
+	libgenlock \
+	libmemalloc \
+    libtilerenderer \
+	libqdutils \
+    liboverlay \
     libQcomUI \
     librs_jni \
+    com.android.future.usb.accessory
+
+PRODUCT_PACKAGES += \
+    libmm-omxcore \
+    libdivxdrmdecrypt \
     libOmxCore \
     libOmxVdec \
-    libOmxVidEnc \
-    libmm-omxcore \
-    libtilerenderer \
-    liboverlay \
-    com.android.future.usb.accessory
+    libOmxVenc \
+    libstagefrighthw \
+    libopencorehw
+
+
 
 # These are the hardware-specific configuration files
 PRODUCT_COPY_FILES += \
