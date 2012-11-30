@@ -41,7 +41,6 @@ PRODUCT_PACKAGES += \
 
 
 PRODUCT_PACKAGES += \
-	gralloc.default \
     gralloc.qsd8k \
 	hwcomposer.default \
     hwcomposer.qsd8k \
@@ -70,6 +69,7 @@ PRODUCT_PACKAGES += \
 # These are the hardware-specific configuration files
 PRODUCT_COPY_FILES += \
     device/semc/es209ra/prebuilt/media_profiles.xml:system/etc/media_profiles.xml \
+	device/semc/es209ra/prebuilt/media_codecs.xml:system/etc/media_codecs.xml \
     device/semc/es209ra/prebuilt/gps.conf:system/etc/gps.conf
 
 # Init files
