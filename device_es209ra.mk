@@ -64,6 +64,9 @@ PRODUCT_PACKAGES += \
     libstagefrighthw \
     libopencorehw
 
+PRODUCT_PACKAGES += \
+    Torch
+
 
 
 # These are the hardware-specific configuration files
