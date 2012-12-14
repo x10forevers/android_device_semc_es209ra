@@ -65,6 +65,12 @@ PRODUCT_PACKAGES += \
     libopencorehw
 
 
+PRODUCT_PACKAGES += \
+	Torch
+
+PRODUCT_PACKAGES -= \
+	CMUpdater
+
 
 # These are the hardware-specific configuration files
 PRODUCT_COPY_FILES += \
