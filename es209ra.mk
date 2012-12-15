@@ -1,61 +1,38 @@
-$(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/full_base.mk)
-$(call inherit-product, device/common/gps/gps_eu_supl.mk)
-
 # proprietary side of the device
-$(call inherit-product, vendor/semc/es209ra/es209ra-vendor.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
+$(call inherit-product-if-exists, vendor/semc/es209ra/es209ra-vendor.mk)
 
-PRODUCT_PROPERTY_OVERRIDES += \
-    dalvik.vm.heapstartsize=5m \
-    dalvik.vm.heapgrowthlimit=48m \
-    dalvik.vm.heapsize=128m
-
-# These is the hardware-specific overlay, which points to the location
-# of hardware-specific resource overrides, typically the frameworks and
-# application settings that are stored in resourced.
 DEVICE_PACKAGE_OVERLAYS += device/semc/es209ra/overlay
 
+$(call inherit-product, device/common/gps/gps_eu_supl.mk)
 
-# Discard inherited values and use our own instead.
-PRODUCT_NAME := es209ra
-PRODUCT_DEVICE := es209ra
-PRODUCT_MODEL := es209ra
+$(call inherit-product, frameworks/native/build/phone-hdpi-512-dalvik-heap.mk)
 
-PRODUCT_MANUFACTURER := Sony Ericsson
-
-TARGET_PREBUILT_KERNEL := $(LOCAL_PATH)/kernel
-PRODUCT_COPY_FILES += \
-    $(TARGET_PREBUILT_KERNEL):kernel
+PRODUCT_AAPT_CONFIG := normal hdpi hdpi
+PRODUCT_AAPT_PREF_CONFIG := hdpi
 
 PRODUCT_PACKAGES += \
-	gps.es209ra \
+    gps.es209ra \
     sensors.es209ra \
     lights.es209ra \
     audio.a2dp.default \
     audio_policy.es209ra \
     audio.primary.es209ra \
-	wlan_loader \
-	wlan_cu \
-	dhcpcd.conf
-
-
-PRODUCT_PACKAGES += \
+    wlan_loader \
+    wlan_cu \
+    dhcpcd.conf \
     gralloc.qsd8k \
-	hwcomposer.default \
+    hwcomposer.default \
     hwcomposer.qsd8k \
     copybit.qsd8k \
     camera.qsd8k \
-	libgenlock \
-	libmemalloc \
+    libgenlock \
+    libmemalloc \
     libtilerenderer \
-	libqdutils \
+    libqdutils \
     liboverlay \
     libQcomUI \
     librs_jni \
-    com.android.future.usb.accessory
-
-PRODUCT_PACKAGES += \
+    com.android.future.usb.accessory \
     libmm-omxcore \
     libdivxdrmdecrypt \
     libOmxCore \
@@ -69,8 +46,8 @@ PRODUCT_PACKAGES += \
 # These are the hardware-specific configuration files
 PRODUCT_COPY_FILES += \
     device/semc/es209ra/prebuilt/media_profiles.xml:system/etc/media_profiles.xml \
-	device/semc/es209ra/prebuilt/media_codecs.xml:system/etc/media_codecs.xml \
-	device/semc/es209ra/prebuilt/audio_policy.conf:system/etc/audio_policy.conf \
+    device/semc/es209ra/prebuilt/media_codecs.xml:system/etc/media_codecs.xml \
+    device/semc/es209ra/prebuilt/audio_policy.conf:system/etc/audio_policy.conf \
     device/semc/es209ra/prebuilt/gps.conf:system/etc/gps.conf
 
 # Init files
@@ -122,6 +99,7 @@ PRODUCT_COPY_FILES += \
     bootable/recovery/res/images/progress_fill.png:root/res/images/progress_fill.png \
     bootable/recovery/res/images/stitch.png:root/res/images/stitch.png
 
+#Framework permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml \
     frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:system/etc/permissions/android.hardware.camera.flash-autofocus.xml \
@@ -135,7 +113,7 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
     frameworks/native/data/etc/android.hardware.telephony.gsm.xml:system/etc/permissions/android.hardware.telephony.gsm.xml
 
--include device/semc/msm7x30-common/prebuilt/resources-hdpi.mk
+-include device/semc/es209ra/prebuilt/chargeanimation.mk
 
 PRODUCT_PROPERTY_OVERRIDES += \
     rild.libpath=/system/lib/libril-qc-1.so \
@@ -167,8 +145,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     debug.composition.type=mdp \
     debug.sf.hw=1 \
     persist.sys.usb.config=mass_storage \
-	ro.config.disable_hw_accel=true \
-    BUILD_UTC_DATE=0
+    ro.config.disable_hw_accel=true
 
 
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -179,5 +156,3 @@ PRODUCT_LOCALES += hdpi
 
 # we have enough storage space to hold precise GC data
 PRODUCT_TAGS += dalvik.gc.type-precise
-
-
