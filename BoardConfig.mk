@@ -62,7 +62,7 @@ ENABLE_WEBGL := true
 TARGET_FORCE_CPU_UPLOAD := true
 
 #Graphics
-BOARD_EGL_CFG := device/semc/msm7x30-common/prebuilt/egl.cfg
+BOARD_EGL_CFG := device/semc/es209ra/config/egl.cfg
 USE_OPENGL_RENDERER := true
 TARGET_NO_HW_VSYNC := true
 BOARD_ADRENO_DECIDE_TEXTURE_TARGET := true
@@ -74,8 +74,6 @@ BOARD_USES_QCOM_GPS := true
 BOARD_VENDOR_QCOM_AMSS_VERSION := 1240
 BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := es209ra
 BOARD_VENDOR_QCOM_GPS_LOC_API_AMSS_VERSION := 1240
-
-BOARD_EGL_CFG := device/semc/es209ra/prebuilt/egl.cfg
 
 BOARD_CUSTOM_BOOTIMG_MK := device/semc/es209ra/custombootimg.mk
 TARGET_RECOVERY_PRE_COMMAND := "touch /cache/recovery/boot;sync;"
