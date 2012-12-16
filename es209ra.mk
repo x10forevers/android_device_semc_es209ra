@@ -12,7 +12,7 @@ PRODUCT_AAPT_PREF_CONFIG := hdpi
 
 PRODUCT_PACKAGES += \
     gps.es209ra \
-    sensors.es209ra \
+    sensors.default \
     lights.es209ra \
     audio.a2dp.default \
     audio_policy.es209ra \
@@ -45,10 +45,12 @@ PRODUCT_PACKAGES += \
 
 # These are the hardware-specific configuration files
 PRODUCT_COPY_FILES += \
-    device/semc/es209ra/prebuilt/media_profiles.xml:system/etc/media_profiles.xml \
-    device/semc/es209ra/prebuilt/media_codecs.xml:system/etc/media_codecs.xml \
-    device/semc/es209ra/prebuilt/audio_policy.conf:system/etc/audio_policy.conf \
-    device/semc/es209ra/prebuilt/gps.conf:system/etc/gps.conf
+    device/semc/es209ra/config/dnsmasq.conf:system/etc/wifi/dnsmasq.conf \
+    device/semc/es209ra/config/wpa_supplicant.conf:system/etc/wifi/wpa_supplicant.conf \
+    device/semc/es209ra/config/media_profiles.xml:system/etc/media_profiles.xml \
+    device/semc/es209ra/config/media_codecs.xml:system/etc/media_codecs.xml \
+    device/semc/es209ra/config/audio_policy.conf:system/etc/audio_policy.conf \
+    device/semc/es209ra/config/sensors.conf:system/etc/sensors.conf
 
 # Init files
 PRODUCT_COPY_FILES += \
@@ -70,8 +72,6 @@ PRODUCT_COPY_FILES += \
     device/semc/es209ra/prebuilt/10dnsconf:system/etc/init.d/10dnsconf \
     device/semc/es209ra/prebuilt/10regcode:system/etc/init.d/10regcode \
     device/semc/es209ra/prebuilt/10hostapconf:system/etc/init.d/10hostapconf \
-    device/semc/es209ra/prebuilt/wpa_supplicant.conf:system/etc/wifi/wpa_supplicant.conf \
-    device/semc/es209ra/prebuilt/dnsmasq.conf:system/etc/wifi/dnsmasq.conf \
     device/semc/es209ra/prebuilt/reg_code:system/etc/wifi/reg_code \
     device/semc/es209ra/prebuilt/ar6000.ko:root/modules/ar6000.ko
 
