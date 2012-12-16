@@ -62,6 +62,8 @@ lib/libc2d2_z180.so
 
 
 ## Other libraries and proprietary binaries
+lib/hw/sensors.es209ra.so
+etc/sensors.conf
 bin/akmd2
 
 #offline charger

@@ -49,8 +49,8 @@ PRODUCT_COPY_FILES += \
     device/semc/es209ra/config/wpa_supplicant.conf:system/etc/wifi/wpa_supplicant.conf \
     device/semc/es209ra/config/media_profiles.xml:system/etc/media_profiles.xml \
     device/semc/es209ra/config/media_codecs.xml:system/etc/media_codecs.xml \
-    device/semc/es209ra/config/audio_policy.conf:system/etc/audio_policy.conf \
-    device/semc/es209ra/config/sensors.conf:system/etc/sensors.conf
+    device/semc/es209ra/config/audio_policy.conf:system/etc/audio_policy.conf
+#    device/semc/es209ra/config/sensors.conf:system/etc/sensors.conf
 
 # Init files
 PRODUCT_COPY_FILES += \
