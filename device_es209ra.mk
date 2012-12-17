@@ -68,11 +68,18 @@ PRODUCT_PACKAGES += \
     Torch
 
 
+PRODUCT_PACKAGES += \
+	Torch
+
+PRODUCT_PACKAGES -= \
+	CMUpdater
+
 
 # These are the hardware-specific configuration files
 PRODUCT_COPY_FILES += \
     device/semc/es209ra/prebuilt/media_profiles.xml:system/etc/media_profiles.xml \
 	device/semc/es209ra/prebuilt/media_codecs.xml:system/etc/media_codecs.xml \
+	device/semc/es209ra/prebuilt/audio_policy.conf:system/etc/audio_policy.conf \
     device/semc/es209ra/prebuilt/gps.conf:system/etc/gps.conf
 
 # Init files
