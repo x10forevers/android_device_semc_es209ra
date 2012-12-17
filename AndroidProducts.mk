@@ -26,4 +26,4 @@
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/device_es209ra.mk
+    $(LOCAL_DIR)/full_es209ra.mk

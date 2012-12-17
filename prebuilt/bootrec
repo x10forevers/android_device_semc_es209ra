@@ -31,7 +31,7 @@ then
   mount /dev/block/mmcblk0p1 /sdcard
   /sbin/recovery&
 else
-    echo 1 > /sys/module/msm_fb/parameters/align_buffer
+  echo 1 > /sys/module/msm_fb/parameters/align_buffer
 fi
 
 /system/bin/chargemon
