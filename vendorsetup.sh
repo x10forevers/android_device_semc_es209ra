@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-add_lunch_combo es209ra-eng
+add_lunch_combo full_es209ra-eng
