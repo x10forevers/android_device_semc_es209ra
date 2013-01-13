@@ -1,0 +1,7 @@
+[
+    {
+        "repository": "SlimRoms/hardware_libhardware_legacy",
+        "target_path": "hardware/libhardware_legacy",
+        "branch": "jellybean"
+    }
+]
